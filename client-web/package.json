@@ -17,6 +17,7 @@
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
+    "@excalidraw/excalidraw": "^0.18.0",
     "@octokit/rest": "^22.0.1",
     "@radix-ui/react-context-menu": "^2.2.16",
     "@radix-ui/react-dialog": "^1.1.15",
@@ -28,6 +29,7 @@
     "cmdk": "^1.1.1",
     "d3-force": "^3.0.0",
     "fuse.js": "^7.1.0",
+    "katex": "^0.16.35",
     "lucide-react": "^0.577.0",
     "next": "16.1.6",
     "next-auth": "^4.24.13",
@@ -40,6 +42,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/katex": "^0.16.8",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

@@ -1,16 +1,42 @@
 "use client";
 
 import { useCallback, useEffect, useRef } from "react";
-import { useCreateBlockNote } from "@blocknote/react";
+import {
+  useCreateBlockNote,
+  SuggestionMenuController,
+  getDefaultReactSlashMenuItems,
+} from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/mantine";
+import {
+  BlockNoteSchema,
+  defaultBlockSpecs,
+  defaultInlineContentSpecs,
+  defaultStyleSpecs,
+} from "@blocknote/core";
+import { insertOrUpdateBlockForSlashMenu } from "@blocknote/core/extensions";
 import "@blocknote/core/fonts/inter.css";
 import "@blocknote/mantine/style.css";
 import { useMotionStore, EDITOR_WIDTHS } from "@/store";
 import { useThemeStore } from "@/store/theme";
 import { resolveWikiLinkPath } from "@/lib/wikilink";
 import { flattenTree } from "@/lib/tree-utils";
+import { uploadImage } from "@/lib/storage/upload";
 import { FrontmatterPanel } from "./FrontmatterPanel";
 import { AgentView } from "./AgentView";
+import { MathBlock } from "./blocks/MathBlock";
+import { EmbedBlock } from "./blocks/EmbedBlock";
+import { ExcalidrawBlock } from "./blocks/ExcalidrawBlock";
+
+const schema = BlockNoteSchema.create({
+  blockSpecs: {
+    ...defaultBlockSpecs,
+    math: MathBlock(),
+    embed: EmbedBlock(),
+    excalidraw: ExcalidrawBlock(),
+  },
+  inlineContentSpecs: defaultInlineContentSpecs,
+  styleSpecs: defaultStyleSpecs,
+});
 
 export function Editor() {
   const {
@@ -50,7 +76,28 @@ export function Editor() {
 
   const editorContainerRef = useRef<HTMLDivElement>(null);
 
-  const editor = useCreateBlockNote();
+  const uploadFile = useCallback(async (file: File): Promise<string> => {
+    const state = useMotionStore.getState();
+    const config = state.repoConfig;
+    if (!config) throw new Error("No repository connected");
+
+    const provider = state.provider as any;
+    const token = provider?.config?.token;
+    if (!token) throw new Error("No auth token available");
+
+    return uploadImage(file, {
+      owner: config.owner,
+      repo: config.repo,
+      branch: config.branch,
+      token,
+      basePath: config.basePath,
+    });
+  }, []);
+
+  const editor = useCreateBlockNote({
+    schema,
+    uploadFile,
+  });
   const mountedRef = useRef(false);
 
   // Cmd+S / Ctrl+S save
@@ -94,14 +141,12 @@ export function Editor() {
       if (!mountedRef.current) {
         const checkMount = () => {
           try {
-            // Access document to verify editor is mounted
             void editor.document;
             return true;
           } catch {
             return false;
           }
         };
-        // Poll until mounted (max 2s)
         for (let i = 0; i < 20; i++) {
           if (checkMount()) { mountedRef.current = true; break; }
           await new Promise(r => setTimeout(r, 100));
@@ -114,7 +159,6 @@ export function Editor() {
         } else {
           const preprocessed = wikiLinksToMarkdown(unescapeCodeBlocks(docContent));
           const blocks = await editor.tryParseMarkdownToBlocks(preprocessed);
-          // Check if user already switched to another file
           if (prevPathRef.current !== docPath) return;
           editor.replaceBlocks(editor.document, blocks);
         }
@@ -172,7 +216,6 @@ export function Editor() {
   }, []);
 
   const handleEditorChange = useCallback(async () => {
-    // Don't trigger during content loading
     if (loadingRef.current) return;
 
     try {
@@ -234,7 +277,55 @@ export function Editor() {
             editor={editor}
             onChange={handleEditorChange}
             theme={themeResolved}
-          />
+            slashMenu={false}
+          >
+            <SuggestionMenuController
+              triggerCharacter="/"
+              getItems={async (query) => {
+                const defaultItems = getDefaultReactSlashMenuItems(editor);
+                const customItems = [
+                  {
+                    title: "Math Equation",
+                    subtext: "Insert a LaTeX math equation",
+                    group: "Media",
+                    onItemClick: () => {
+                      insertOrUpdateBlockForSlashMenu(editor, { type: "math" } as any);
+                    },
+                    aliases: ["math", "latex", "equation", "formula", "katex"],
+                  },
+                  {
+                    title: "Embed",
+                    subtext: "Embed YouTube, Twitter, Figma, or any URL",
+                    group: "Media",
+                    onItemClick: () => {
+                      insertOrUpdateBlockForSlashMenu(editor, { type: "embed" } as any);
+                    },
+                    aliases: ["embed", "youtube", "twitter", "figma", "iframe"],
+                  },
+                  {
+                    title: "Drawing / Whiteboard",
+                    subtext: "Create an Excalidraw drawing",
+                    group: "Media",
+                    onItemClick: () => {
+                      insertOrUpdateBlockForSlashMenu(editor, { type: "excalidraw" } as any);
+                    },
+                    aliases: ["draw", "drawing", "whiteboard", "excalidraw", "sketch"],
+                  },
+                ];
+
+                const allItems = [...defaultItems, ...customItems];
+
+                if (!query) return allItems;
+                const q = query.toLowerCase();
+                return allItems.filter(
+                  (item) =>
+                    item.title.toLowerCase().includes(q) ||
+                    item.subtext?.toLowerCase().includes(q) ||
+                    item.aliases?.some((a) => a.toLowerCase().includes(q))
+                );
+              }}
+            />
+          </BlockNoteView>
         </div>
       </div>
     </div>
