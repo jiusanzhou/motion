@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { useSession, signIn, signOut } from "next-auth/react";
 import { useMotionStore } from "@/store";
 import { FileTree } from "@/components/file-tree/FileTree";
@@ -70,6 +70,48 @@ export function Sidebar() {
   const { data: session } = useSession();
 
   const [newFileDialogOpen, setNewFileDialogOpen] = useState(false);
+  const [sidebarWidth, setSidebarWidth] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("motion:sidebar-width");
+      return saved ? parseInt(saved, 10) : 240;
+    }
+    return 240;
+  });
+  const resizingRef = useRef(false);
+
+  const handleResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    resizingRef.current = true;
+    const startX = e.clientX;
+    const startWidth = sidebarWidth;
+
+    const handleMove = (me: MouseEvent) => {
+      if (!resizingRef.current) return;
+      const newWidth = Math.min(Math.max(startWidth + me.clientX - startX, 180), 480);
+      setSidebarWidth(newWidth);
+    };
+
+    const handleUp = () => {
+      resizingRef.current = false;
+      document.removeEventListener("mousemove", handleMove);
+      document.removeEventListener("mouseup", handleUp);
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+      localStorage.setItem("motion:sidebar-width", String(sidebarWidth));
+    };
+
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+    document.addEventListener("mousemove", handleMove);
+    document.addEventListener("mouseup", handleUp);
+  }, [sidebarWidth]);
+
+  useEffect(() => {
+    if (sidebarWidth) {
+      localStorage.setItem("motion:sidebar-width", String(sidebarWidth));
+    }
+  }, [sidebarWidth]);
+
   const [newFolderDialogOpen, setNewFolderDialogOpen] = useState(false);
   const [newName, setNewName] = useState("");
   const [showTemplates, setShowTemplates] = useState(false);
@@ -122,10 +164,11 @@ export function Sidebar() {
 
       <aside
         className={cn(
-          "flex h-screen w-60 shrink-0 flex-col border-r border-[var(--neutral-100)] bg-[var(--neutral-50)] transition-all duration-200",
+          "relative flex h-screen shrink-0 flex-col border-r border-[var(--neutral-100)] bg-[var(--neutral-50)] transition-all duration-200",
           "max-md:fixed max-md:left-0 max-md:top-0 max-md:z-30",
           !sidebarOpen && "max-md:-translate-x-full md:w-0 md:overflow-hidden md:border-r-0"
         )}
+        style={{ width: sidebarOpen ? `${sidebarWidth}px` : undefined }}
       >
         {/* Workspace header with multi-repo dropdown */}
         <div className="flex h-12 items-center justify-between px-4">
@@ -374,6 +417,13 @@ export function Sidebar() {
             </DropdownMenu.Root>
           )}
         </div>
+        {/* Resize handle */}
+        {sidebarOpen && (
+          <div
+            onMouseDown={handleResizeStart}
+            className="absolute right-0 top-0 h-full w-1 cursor-col-resize hover:bg-[var(--neutral-300)] active:bg-[var(--neutral-400)] transition-colors z-10"
+          />
+        )}
       </aside>
 
       {/* New file dialog */}
