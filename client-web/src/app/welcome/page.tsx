@@ -1,3 +1,6 @@
+"use client";
+
+import { signIn } from "next-auth/react";
 import Link from "next/link";
 
 function Logo() {
@@ -265,12 +268,12 @@ export default function WelcomePage() {
             <GitHubIcon className="h-4 w-4" />
             GitHub
           </a>
-          <a
-            href="/api/auth/signin/github"
+          <button
+            onClick={() => signIn("github", { callbackUrl: "/" })}
             className="rounded-lg bg-[var(--foreground)] px-4 py-1.5 text-sm font-medium text-[var(--background)] transition-opacity hover:opacity-90"
           >
             Sign In
-          </a>
+          </button>
         </div>
       </nav>
 
@@ -316,14 +319,14 @@ export default function WelcomePage() {
                 Get started in seconds
               </p>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-center">
-                <a
-                  href="/api/auth/signin/github"
+                <button
+                  onClick={() => signIn("github", { callbackUrl: "/" })}
                   className="inline-flex items-center justify-center gap-2.5 rounded-lg bg-[var(--foreground)] px-6 py-2.5 text-sm font-medium text-[var(--background)] transition-opacity hover:opacity-90"
                 >
                   <GitHubIcon className="h-4.5 w-4.5" />
                   Continue with GitHub
                   <ArrowRightIcon />
-                </a>
+                </button>
                 <div className="relative">
                   <button
                     disabled
@@ -444,14 +447,14 @@ export default function WelcomePage() {
             Sign in with GitHub and connect a repo to start building your knowledge base.
           </p>
           <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <a
-              href="/api/auth/signin/github"
+            <button
+              onClick={() => signIn("github", { callbackUrl: "/" })}
               className="inline-flex items-center gap-2 rounded-lg bg-[var(--foreground)] px-6 py-2.5 text-sm font-medium text-[var(--background)] transition-opacity hover:opacity-90"
             >
               <GitHubIcon className="h-4 w-4" />
               Launch Motion
               <ArrowRightIcon />
-            </a>
+            </button>
             <a
               href="https://github.com/jiusanzhou/motion"
               target="_blank"
