@@ -122,7 +122,7 @@ export default function WelcomePage() {
         </p>
         <div className="flex items-center justify-center gap-4">
           <a
-            href="/api/auth/signin"
+            href="/api/auth/signin/github"
             className="inline-flex items-center gap-2 rounded-lg bg-[var(--foreground)] px-6 py-2.5 text-sm font-medium text-[var(--background)] transition-opacity hover:opacity-90"
           >
             Get Started
@@ -194,7 +194,7 @@ export default function WelcomePage() {
             Sign in with GitHub and connect a repo to start building your knowledge base.
           </p>
           <a
-            href="/api/auth/signin"
+            href="/api/auth/signin/github"
             className="inline-flex items-center gap-2 rounded-lg bg-[var(--foreground)] px-6 py-2.5 text-sm font-medium text-[var(--background)] transition-opacity hover:opacity-90"
           >
             Launch Motion
