@@ -153,3 +153,21 @@ main {
   --bn-colors-editor-background: var(--background);
   --bn-colors-editor-text: var(--foreground);
 }
+
+/* Mobile: reduce BlockNote internal padding */
+@media (max-width: 767px) {
+  .motion-editor .bn-container {
+    padding-left: 4px;
+    padding-right: 4px;
+  }
+  .motion-editor .bn-editor {
+    padding-left: 0;
+    padding-right: 0;
+  }
+  .motion-editor .bn-block-group {
+    padding-left: 0 !important;
+  }
+  .motion-editor .bn-side-menu {
+    display: none;
+  }
+}
