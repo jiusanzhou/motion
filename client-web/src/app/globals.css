@@ -157,6 +157,14 @@ main {
 /* Mobile: reduce BlockNote internal padding */
 @media (max-width: 767px) {
   .motion-editor .bn-side-menu {
-    display: none;
+    display: none !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .motion-editor .bn-drag-handle,
+  .motion-editor [data-drag-handle],
+  .motion-editor .bn-drag-handle-menu {
+    display: none !important;
   }
 }
