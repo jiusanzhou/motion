@@ -184,3 +184,10 @@ main {
     padding-right: 0 !important;
   }
 }
+
+/* Constrain Excalidraw SVG preview size */
+.bn-block svg {
+  max-width: 100%;
+  max-height: 240px;
+  height: auto;
+}

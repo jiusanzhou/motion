@@ -10,7 +10,7 @@ const ExcalidrawComponent = dynamic(
     import("@excalidraw/excalidraw").then((mod) => ({
       default: mod.Excalidraw,
     })),
-  { ssr: false }
+  { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#999" }}>Loading Excalidraw...</div> }
 );
 
 const exportToSvgDynamic = () =>
@@ -43,7 +43,11 @@ function ExcalidrawEditor({
     const appState = excalidrawAPI.getAppState();
     const files = excalidrawAPI.getFiles();
 
-    const json = JSON.stringify({ elements, appState: { viewBackgroundColor: appState.viewBackgroundColor }, files });
+    const json = JSON.stringify({
+      elements,
+      appState: { viewBackgroundColor: appState.viewBackgroundColor },
+      files,
+    });
 
     let preview = "";
     try {
@@ -53,9 +57,16 @@ function ExcalidrawEditor({
         appState: { ...appState, exportWithDarkMode: false },
         files,
       });
+      // Force SVG to have bounded dimensions
+      svg.removeAttribute("width");
+      svg.removeAttribute("height");
+      svg.setAttribute("viewBox", svg.getAttribute("viewBox") || "0 0 100 100");
+      svg.style.width = "100%";
+      svg.style.height = "auto";
+      svg.style.maxHeight = "300px";
       preview = new XMLSerializer().serializeToString(svg);
     } catch {
-      // preview generation failed, continue without
+      // preview generation failed
     }
 
     onSave(json, preview);
@@ -80,6 +91,7 @@ function ExcalidrawEditor({
           padding: "8px 16px",
           borderBottom: "1px solid #e5e7eb",
           backgroundColor: "#fafafa",
+          flexShrink: 0,
         }}
       >
         <span style={{ fontWeight: 600, fontSize: "14px" }}>
@@ -116,7 +128,7 @@ function ExcalidrawEditor({
           </button>
         </div>
       </div>
-      <div style={{ flex: 1 }}>
+      <div style={{ flex: 1, minHeight: 0 }}>
         <ExcalidrawComponent
           excalidrawAPI={(api: any) => setExcalidrawAPI(api)}
           initialData={initialData}
@@ -125,6 +137,16 @@ function ExcalidrawEditor({
       </div>
     </div>
   );
+}
+
+/**
+ * Sanitize SVG preview: strip scripts and constrain size
+ */
+function sanitizeSvg(raw: string): string {
+  // Remove any <script> tags
+  let svg = raw.replace(/<script[\s\S]*?<\/script>/gi, "");
+  // Wrap in a container div for sizing via CSS
+  return svg;
 }
 
 export const ExcalidrawBlock = createReactBlockSpec(
@@ -163,12 +185,13 @@ export const ExcalidrawBlock = createReactBlockSpec(
         );
       }
 
+      // Empty state — no drawing yet
       if (!data) {
         return (
           <div
             onClick={() => setIsOpen(true)}
             style={{
-              padding: "32px",
+              padding: "24px",
               border: "1px dashed var(--neutral-200)",
               borderRadius: "8px",
               backgroundColor: "var(--neutral-50, #fafafa)",
@@ -177,38 +200,27 @@ export const ExcalidrawBlock = createReactBlockSpec(
               transition: "border-color 0.15s",
             }}
             onMouseEnter={(e) =>
-              (e.currentTarget.style.borderColor =
-                "var(--accent, #3b82f6)")
+              (e.currentTarget.style.borderColor = "var(--foreground)")
             }
             onMouseLeave={(e) =>
               (e.currentTarget.style.borderColor = "var(--neutral-200)")
             }
           >
-            <div style={{ fontSize: "24px", marginBottom: "8px" }}>
-              &#9998;
-            </div>
+            <div style={{ fontSize: "20px", marginBottom: "4px" }}>🎨</div>
             <div
               style={{
-                fontSize: "14px",
+                fontSize: "13px",
                 fontWeight: 500,
                 color: "var(--neutral-500, #6b7280)",
               }}
             >
               Click to create a drawing
             </div>
-            <div
-              style={{
-                fontSize: "12px",
-                color: "var(--neutral-400)",
-                marginTop: "4px",
-              }}
-            >
-              Opens Excalidraw whiteboard editor
-            </div>
           </div>
         );
       }
 
+      // Has drawing — show preview thumbnail
       return (
         <div
           onClick={() => setIsOpen(true)}
@@ -220,8 +232,7 @@ export const ExcalidrawBlock = createReactBlockSpec(
             transition: "box-shadow 0.15s",
           }}
           onMouseEnter={(e) =>
-            (e.currentTarget.style.boxShadow =
-              "0 0 0 2px var(--accent, #3b82f6)")
+            (e.currentTarget.style.boxShadow = "0 0 0 2px var(--foreground)")
           }
           onMouseLeave={(e) =>
             (e.currentTarget.style.boxShadow = "none")
@@ -234,27 +245,37 @@ export const ExcalidrawBlock = createReactBlockSpec(
                 backgroundColor: "white",
                 display: "flex",
                 justifyContent: "center",
-                minHeight: "100px",
-                maxHeight: "400px",
+                alignItems: "center",
+                maxHeight: "240px",
                 overflow: "hidden",
               }}
-              dangerouslySetInnerHTML={{ __html: preview }}
-            />
+            >
+              <div
+                style={{
+                  maxWidth: "100%",
+                  maxHeight: "220px",
+                  overflow: "hidden",
+                }}
+                dangerouslySetInnerHTML={{
+                  __html: sanitizeSvg(preview),
+                }}
+              />
+            </div>
           ) : (
             <div
               style={{
-                padding: "24px",
+                padding: "20px",
                 textAlign: "center",
                 color: "var(--neutral-400)",
                 fontSize: "13px",
               }}
             >
-              Drawing (click to edit)
+              🎨 Drawing (click to edit)
             </div>
           )}
           <div
             style={{
-              padding: "6px 10px",
+              padding: "4px 10px",
               fontSize: "11px",
               color: "var(--neutral-400)",
               backgroundColor: "var(--neutral-50, #fafafa)",
@@ -262,7 +283,7 @@ export const ExcalidrawBlock = createReactBlockSpec(
               textAlign: "center",
             }}
           >
-            Click to edit drawing
+            Click to edit
           </div>
         </div>
       );
