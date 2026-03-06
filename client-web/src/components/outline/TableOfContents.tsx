@@ -104,7 +104,7 @@ export function TableOfContents() {
   if (!currentDocPath || items.length === 0) return null;
 
   return (
-    <div className="fixed right-4 top-14 z-30">
+    <div className="sticky top-4 z-30 ml-auto mr-4 mt-4 hidden lg:block">
       <button
         onClick={() => setCollapsed((c) => !c)}
         className="mb-1 text-xs text-[var(--neutral-400)] hover:text-[var(--foreground)] transition-colors"
