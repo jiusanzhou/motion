@@ -45,7 +45,7 @@ export function FrontmatterPanel() {
     <div className="border-b border-[var(--neutral-100)]">
       <button
         onClick={() => setExpanded((e) => !e)}
-        className="flex w-full items-center gap-1.5 px-2 sm:px-4 py-2 text-xs text-[var(--neutral-500)] hover:text-[var(--foreground)] transition-colors"
+        className="flex w-full items-center gap-1.5 px-4 py-2 text-xs text-[var(--neutral-500)] hover:text-[var(--foreground)] transition-colors"
       >
         {expanded ? (
           <ChevronDown className="h-3 w-3" />
@@ -56,7 +56,7 @@ export function FrontmatterPanel() {
       </button>
 
       {expanded && (
-        <div className="flex flex-col gap-3 px-2 sm:px-4 pb-4">
+        <div className="flex flex-col gap-3 px-4 pb-4">
           {/* Tags */}
           <div>
             <label className="mb-1 block text-xs font-medium text-[var(--neutral-500)]">
