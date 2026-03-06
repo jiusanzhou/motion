@@ -5,6 +5,7 @@ import { defaultProps } from "@blocknote/core";
 import { useState, useCallback, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
+import "@excalidraw/excalidraw/index.css";
 
 const ExcalidrawComponent = dynamic(
   () =>
