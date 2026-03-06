@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useMotionStore } from "@/store";
 
 interface TocItem {
   id: string;
@@ -13,24 +14,26 @@ export function TableOfContents() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState(false);
   const observerRef = useRef<IntersectionObserver | null>(null);
+  const currentDocPath = useMotionStore((s) => s.currentDoc?.path);
 
-  // Extract headings from the DOM (BlockNote renders them)
   const extractHeadings = useCallback(() => {
     const editor = document.querySelector(".motion-editor");
     if (!editor) return;
 
-    const headings = editor.querySelectorAll(
-      ".bn-block-content h1, .bn-block-content h2, .bn-block-content h3"
-    );
+    const headings = editor.querySelectorAll("h1, h2, h3, [data-content-type='heading'] h1, [data-content-type='heading'] h2, [data-content-type='heading'] h3");
     const tocItems: TocItem[] = [];
+    const seen = new Set<string>();
 
     headings.forEach((el, i) => {
+      if (seen.has(el.textContent ?? "")) return;
+      seen.add(el.textContent ?? "");
+
       const slug = (el.textContent ?? "")
         .toLowerCase()
         .replace(/[^a-z0-9\u4e00-\u9fff]+/g, "-")
         .replace(/(^-|-$)/g, "");
-      const id = `heading-${slug || i}`;
-      el.id = id;
+      const id = `toc-${slug || i}-${i}`;
+      (el as HTMLElement).id = id;
       tocItems.push({
         id,
         text: el.textContent ?? "",
@@ -41,25 +44,35 @@ export function TableOfContents() {
     setItems(tocItems);
   }, []);
 
+  // Re-extract headings when doc changes or editor content mutates
   useEffect(() => {
-    // Run after content loads
-    const timer = setTimeout(extractHeadings, 500);
+    if (!currentDocPath) {
+      setItems([]);
+      return;
+    }
 
-    // Re-run on mutations
+    // Try multiple times as BlockNote renders async
+    const timers = [
+      setTimeout(extractHeadings, 300),
+      setTimeout(extractHeadings, 800),
+      setTimeout(extractHeadings, 1500),
+    ];
+
+    // Also watch for mutations
     const editor = document.querySelector(".motion-editor");
+    let mo: MutationObserver | null = null;
     if (editor) {
-      const mo = new MutationObserver(() => {
+      mo = new MutationObserver(() => {
         setTimeout(extractHeadings, 200);
       });
       mo.observe(editor, { childList: true, subtree: true });
-      return () => {
-        clearTimeout(timer);
-        mo.disconnect();
-      };
     }
 
-    return () => clearTimeout(timer);
-  }, [extractHeadings]);
+    return () => {
+      timers.forEach(clearTimeout);
+      mo?.disconnect();
+    };
+  }, [currentDocPath, extractHeadings]);
 
   // Intersection observer for active heading
   useEffect(() => {
@@ -91,10 +104,18 @@ export function TableOfContents() {
   const scrollTo = useCallback((id: string) => {
     const el = document.getElementById(id);
     if (!el) return;
-    el.scrollIntoView({ behavior: "smooth", block: "start" });
+    const scrollContainer = document.querySelector("main");
+    if (scrollContainer) {
+      const containerRect = scrollContainer.getBoundingClientRect();
+      const elRect = el.getBoundingClientRect();
+      const offset = elRect.top - containerRect.top + scrollContainer.scrollTop - 20;
+      scrollContainer.scrollTo({ top: offset, behavior: "smooth" });
+    } else {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
   }, []);
 
-  if (items.length === 0) return null;
+  if (!currentDocPath || items.length === 0) return null;
 
   return (
     <div className="fixed right-4 top-14 z-30">
@@ -102,10 +123,10 @@ export function TableOfContents() {
         onClick={() => setCollapsed((c) => !c)}
         className="mb-1 text-xs text-[var(--neutral-400)] hover:text-[var(--foreground)] transition-colors"
       >
-        {collapsed ? "TOC" : "Contents"}
+        {collapsed ? "▶ TOC" : "Contents"}
       </button>
       {!collapsed && (
-        <nav className="flex w-48 flex-col gap-0.5 border-l border-[var(--neutral-200)] pl-3">
+        <nav className="flex w-48 max-h-[60vh] overflow-y-auto flex-col gap-0.5 border-l border-[var(--neutral-200)] pl-3">
           {items.map((item) => (
             <button
               key={item.id}
