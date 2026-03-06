@@ -8,6 +8,9 @@ import { TabBar } from "@/components/tabs/TabBar";
 import { ConnectDialog } from "@/components/connect/ConnectDialog";
 import { CommandPalette } from "@/components/command/CommandPalette";
 import { ToastContainer } from "@/components/ui/Toast";
+import { AISettingsDialog } from "@/components/ai/AISettingsDialog";
+import { AIChatPanel } from "@/components/ai/AIChatPanel";
+import { AIFloatingMenu } from "@/components/ai/AIFloatingMenu";
 import { TableOfContents } from "@/components/outline/TableOfContents";
 import { useMotionStore } from "@/store";
 import { useThemeStore } from "@/store/theme";
@@ -64,6 +67,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <ConnectDialog />
       <CommandPalette />
       <ToastContainer />
+      <AISettingsDialog />
+      <AIChatPanel />
+      <AIFloatingMenu />
 
       {/* Mobile overlay for sidebar */}
       {sidebarOpen && (

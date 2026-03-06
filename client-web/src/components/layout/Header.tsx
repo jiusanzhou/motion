@@ -2,6 +2,7 @@
 
 import { useMotionStore, type EditorWidth, type ViewMode } from "@/store";
 import { useThemeStore } from "@/store/theme";
+import { useAIStore } from "@/store/ai";
 import { HistoryPanel } from "@/components/history/HistoryPanel";
 import {
   ChevronRight,
