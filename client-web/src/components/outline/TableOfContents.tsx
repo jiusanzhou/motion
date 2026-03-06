@@ -104,14 +104,14 @@ export function TableOfContents() {
   const scrollTo = useCallback((id: string) => {
     const el = document.getElementById(id);
     if (!el) return;
-    const scrollContainer = document.querySelector("main");
-    if (scrollContainer) {
-      const containerRect = scrollContainer.getBoundingClientRect();
-      const elRect = el.getBoundingClientRect();
-      const offset = elRect.top - containerRect.top + scrollContainer.scrollTop - 20;
-      scrollContainer.scrollTo({ top: offset, behavior: "smooth" });
-    } else {
-      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    const container = document.getElementById("motion-scroll-container");
+    if (container) {
+      const elTop = el.getBoundingClientRect().top;
+      const containerTop = container.getBoundingClientRect().top;
+      container.scrollTo({
+        top: container.scrollTop + elTop - containerTop - 20,
+        behavior: "smooth",
+      });
     }
   }, []);
 
