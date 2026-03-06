@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useCreateBlockNote } from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/mantine";
 import "@blocknote/core/fonts/inter.css";
@@ -25,7 +25,6 @@ export function Editor() {
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastContentRef = useRef<string | null>(null);
   const loadingRef = useRef(false);
-  const [editorReady, setEditorReady] = useState(false);
 
   // Unescape backslash-escaped quotes inside fenced code blocks
   function unescapeCodeBlocks(md: string): string {
@@ -52,11 +51,7 @@ export function Editor() {
   const editorContainerRef = useRef<HTMLDivElement>(null);
 
   const editor = useCreateBlockNote();
-
-  // Mark editor as ready after first render
-  useEffect(() => {
-    setEditorReady(true);
-  }, [editor]);
+  const mountedRef = useRef(false);
 
   // Cmd+S / Ctrl+S save
   useEffect(() => {
@@ -83,7 +78,7 @@ export function Editor() {
 
   // Load content when currentDoc changes
   useEffect(() => {
-    if (!currentDoc || !editorReady) return;
+    if (!currentDoc) return;
 
     const docPath = currentDoc.path;
     const docContent = currentDoc.content;
@@ -95,6 +90,24 @@ export function Editor() {
     loadingRef.current = true;
 
     async function loadContent() {
+      // Wait for editor to be mounted
+      if (!mountedRef.current) {
+        const checkMount = () => {
+          try {
+            // Access document to verify editor is mounted
+            void editor.document;
+            return true;
+          } catch {
+            return false;
+          }
+        };
+        // Poll until mounted (max 2s)
+        for (let i = 0; i < 20; i++) {
+          if (checkMount()) { mountedRef.current = true; break; }
+          await new Promise(r => setTimeout(r, 100));
+        }
+        if (!mountedRef.current) return;
+      }
       try {
         if (!docContent) {
           editor.replaceBlocks(editor.document, []);
@@ -121,7 +134,7 @@ export function Editor() {
     }
 
     loadContent();
-  }, [currentDoc?.path, currentDoc?.content, editorReady, editor]);
+  }, [currentDoc?.path, currentDoc?.content, editor]);
 
   // Cleanup auto-save timer on unmount
   useEffect(() => {
