@@ -1,9 +1,13 @@
 import { create } from "zustand";
 
+export type AuthMode = "bearer" | "x-api-key" | "custom";
+
 export interface AIConfig {
   baseUrl: string;
   apiKey: string;
   model: string;
+  authMode: AuthMode;
+  customHeaderName: string;
   autoCompleteEnabled: boolean;
 }
 
@@ -23,6 +27,8 @@ function loadConfig(): AIConfig {
     baseUrl: "https://api.openai.com/v1",
     apiKey: "",
     model: "gpt-4o",
+    authMode: "bearer",
+    customHeaderName: "",
     autoCompleteEnabled: false,
   };
   try {

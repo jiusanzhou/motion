@@ -5,6 +5,29 @@ export interface ChatMessage {
   content: string;
 }
 
+function buildAuthHeaders(config: AIConfig): Record<string, string> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+
+  switch (config.authMode) {
+    case "x-api-key":
+      headers["x-api-key"] = config.apiKey;
+      break;
+    case "custom":
+      if (config.customHeaderName) {
+        headers[config.customHeaderName] = config.apiKey;
+      }
+      break;
+    case "bearer":
+    default:
+      headers["Authorization"] = `Bearer ${config.apiKey}`;
+      break;
+  }
+
+  return headers;
+}
+
 export async function streamChat(
   config: AIConfig,
   messages: ChatMessage[],
@@ -15,10 +38,7 @@ export async function streamChat(
 
   const res = await fetch(`${config.baseUrl}/chat/completions`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${config.apiKey}`,
-    },
+    headers: buildAuthHeaders(config),
     body: JSON.stringify({
       model: config.model,
       messages,
