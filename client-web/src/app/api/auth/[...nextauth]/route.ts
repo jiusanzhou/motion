@@ -25,6 +25,11 @@ const handler = NextAuth({
       return session;
     },
   },
+  pages: {
+    signIn: "/welcome",
+    error: "/welcome",
+  },
+  debug: process.env.NODE_ENV === "development",
 });
 
 export { handler as GET, handler as POST };
