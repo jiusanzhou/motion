@@ -119,14 +119,7 @@ export function Sidebar() {
 
   return (
     <>
-      {!sidebarOpen && (
-        <button
-          onClick={toggleSidebar}
-          className="fixed left-3 top-3 z-30 rounded-md p-1.5 text-[var(--neutral-400)] hover:bg-[var(--neutral-100)] hover:text-[var(--neutral-600)] transition-colors hidden md:block"
-        >
-          <PanelLeft className="h-5 w-5" />
-        </button>
-      )}
+
       <aside
         className={cn(
           "flex h-screen w-60 shrink-0 flex-col border-r border-[var(--neutral-100)] bg-[var(--neutral-50)] transition-all duration-200",

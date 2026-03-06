@@ -61,11 +61,11 @@ export function Header() {
   return (
     <header className="flex h-12 shrink-0 items-center justify-between border-b border-[var(--neutral-100)] px-4 bg-[var(--background)]">
       <div className="flex items-center gap-1 text-sm text-[var(--neutral-500)]">
-        {/* Mobile hamburger */}
+        {/* Sidebar toggle */}
         {!sidebarOpen && (
           <button
             onClick={toggleSidebar}
-            className="mr-2 rounded-md p-1 text-[var(--neutral-400)] hover:bg-[var(--neutral-100)] md:hidden"
+            className="mr-2 rounded-md p-1 text-[var(--neutral-400)] hover:bg-[var(--neutral-100)]"
           >
             <Menu className="h-5 w-5" />
           </button>
