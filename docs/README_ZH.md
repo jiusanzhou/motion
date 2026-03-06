@@ -14,7 +14,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](../LICENSE)
 [![Next.js](https://img.shields.io/badge/Next.js-16-black)](https://nextjs.org)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/nicepkg/motion/pulls)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/jiusanzhou/motion/pulls)
 
 ---
 
@@ -79,7 +79,7 @@ Motion 是一个**纯前端**的 Notion 风格知识库编辑器。数据不经�
 ### 1. 克隆并安装
 
 ```bash
-git clone https://github.com/nicepkg/motion.git
+git clone https://github.com/jiusanzhou/motion.git
 cd motion/client-web
 pnpm install
 ```

@@ -96,7 +96,7 @@ export default function WelcomePage() {
           <span className="text-lg font-semibold tracking-tight">Motion</span>
         </div>
         <a
-          href="https://github.com/nicepkg/motion"
+          href="https://github.com/jiusanzhou/motion"
           target="_blank"
           rel="noopener noreferrer"
           className="text-sm text-[var(--neutral-500)] transition-colors hover:text-[var(--foreground)]"
@@ -131,7 +131,7 @@ export default function WelcomePage() {
             </svg>
           </Link>
           <a
-            href="https://github.com/nicepkg/motion"
+            href="https://github.com/jiusanzhou/motion"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 rounded-lg border border-[var(--neutral-200)] px-6 py-2.5 text-sm font-medium transition-colors hover:bg-[var(--neutral-50)]"
@@ -211,7 +211,7 @@ export default function WelcomePage() {
           <span>MIT License</span>
           <div className="flex items-center gap-4">
             <a
-              href="https://github.com/nicepkg/motion"
+              href="https://github.com/jiusanzhou/motion"
               target="_blank"
               rel="noopener noreferrer"
               className="transition-colors hover:text-[var(--foreground)]"
