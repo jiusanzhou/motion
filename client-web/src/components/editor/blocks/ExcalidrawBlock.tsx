@@ -2,7 +2,8 @@
 
 import { createReactBlockSpec } from "@blocknote/react";
 import { defaultProps } from "@blocknote/core";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
+import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
 
 const ExcalidrawComponent = dynamic(
@@ -10,13 +11,20 @@ const ExcalidrawComponent = dynamic(
     import("@excalidraw/excalidraw").then((mod) => ({
       default: mod.Excalidraw,
     })),
-  { ssr: false, loading: () => <div style={{ padding: 40, textAlign: "center", color: "#999" }}>Loading Excalidraw...</div> }
+  {
+    ssr: false,
+    loading: () => (
+      <div style={{ padding: 40, textAlign: "center", color: "#999" }}>
+        Loading Excalidraw...
+      </div>
+    ),
+  }
 );
 
 const exportToSvgDynamic = () =>
   import("@excalidraw/excalidraw").then((mod) => mod.exportToSvg);
 
-function ExcalidrawEditor({
+function ExcalidrawOverlay({
   data,
   onSave,
   onClose,
@@ -26,6 +34,16 @@ function ExcalidrawEditor({
   onClose: () => void;
 }) {
   const [excalidrawAPI, setExcalidrawAPI] = useState<any>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    // Prevent body scroll while overlay is open
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, []);
 
   const initialData = data
     ? (() => {
@@ -57,13 +75,15 @@ function ExcalidrawEditor({
         appState: { ...appState, exportWithDarkMode: false },
         files,
       });
-      // Force SVG to have bounded dimensions
       svg.removeAttribute("width");
       svg.removeAttribute("height");
-      svg.setAttribute("viewBox", svg.getAttribute("viewBox") || "0 0 100 100");
+      svg.setAttribute(
+        "viewBox",
+        svg.getAttribute("viewBox") || "0 0 100 100"
+      );
       svg.style.width = "100%";
       svg.style.height = "auto";
-      svg.style.maxHeight = "300px";
+      svg.style.maxHeight = "200px";
       preview = new XMLSerializer().serializeToString(svg);
     } catch {
       // preview generation failed
@@ -72,12 +92,14 @@ function ExcalidrawEditor({
     onSave(json, preview);
   }, [excalidrawAPI, onSave]);
 
-  return (
+  if (!mounted) return null;
+
+  const overlay = (
     <div
       style={{
         position: "fixed",
         inset: 0,
-        zIndex: 9999,
+        zIndex: 99999,
         backgroundColor: "white",
         display: "flex",
         flexDirection: "column",
@@ -137,16 +159,12 @@ function ExcalidrawEditor({
       </div>
     </div>
   );
+
+  return createPortal(overlay, document.body);
 }
 
-/**
- * Sanitize SVG preview: strip scripts and constrain size
- */
 function sanitizeSvg(raw: string): string {
-  // Remove any <script> tags
-  let svg = raw.replace(/<script[\s\S]*?<\/script>/gi, "");
-  // Wrap in a container div for sizing via CSS
-  return svg;
+  return raw.replace(/<script[\s\S]*?<\/script>/gi, "");
 }
 
 export const ExcalidrawBlock = createReactBlockSpec(
@@ -175,18 +193,8 @@ export const ExcalidrawBlock = createReactBlockSpec(
         [props.editor, props.block]
       );
 
-      if (isOpen) {
-        return (
-          <ExcalidrawEditor
-            data={data}
-            onSave={handleSave}
-            onClose={() => setIsOpen(false)}
-          />
-        );
-      }
-
-      // Empty state — no drawing yet
-      if (!data) {
+      // Empty state
+      if (!data && !isOpen) {
         return (
           <div
             onClick={() => setIsOpen(true)}
@@ -216,75 +224,92 @@ export const ExcalidrawBlock = createReactBlockSpec(
             >
               Click to create a drawing
             </div>
+            {isOpen && (
+              <ExcalidrawOverlay
+                data={data}
+                onSave={handleSave}
+                onClose={() => setIsOpen(false)}
+              />
+            )}
           </div>
         );
       }
 
-      // Has drawing — show preview thumbnail
+      // Has drawing — show preview
       return (
-        <div
-          onClick={() => setIsOpen(true)}
-          style={{
-            border: "1px solid var(--neutral-200)",
-            borderRadius: "8px",
-            overflow: "hidden",
-            cursor: "pointer",
-            transition: "box-shadow 0.15s",
-          }}
-          onMouseEnter={(e) =>
-            (e.currentTarget.style.boxShadow = "0 0 0 2px var(--foreground)")
-          }
-          onMouseLeave={(e) =>
-            (e.currentTarget.style.boxShadow = "none")
-          }
-        >
-          {preview ? (
-            <div
-              style={{
-                padding: "12px",
-                backgroundColor: "white",
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                maxHeight: "240px",
-                overflow: "hidden",
-              }}
-            >
+        <div>
+          <div
+            onClick={() => setIsOpen(true)}
+            style={{
+              border: "1px solid var(--neutral-200)",
+              borderRadius: "8px",
+              overflow: "hidden",
+              cursor: "pointer",
+              transition: "box-shadow 0.15s",
+            }}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.boxShadow =
+                "0 0 0 2px var(--foreground)")
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.boxShadow = "none")
+            }
+          >
+            {preview ? (
               <div
                 style={{
-                  maxWidth: "100%",
-                  maxHeight: "220px",
+                  padding: "12px",
+                  backgroundColor: "white",
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  maxHeight: "200px",
                   overflow: "hidden",
                 }}
-                dangerouslySetInnerHTML={{
-                  __html: sanitizeSvg(preview),
+              >
+                <div
+                  style={{
+                    maxWidth: "100%",
+                    maxHeight: "180px",
+                    overflow: "hidden",
+                  }}
+                  dangerouslySetInnerHTML={{
+                    __html: sanitizeSvg(preview),
+                  }}
+                />
+              </div>
+            ) : (
+              <div
+                style={{
+                  padding: "20px",
+                  textAlign: "center",
+                  color: "var(--neutral-400)",
+                  fontSize: "13px",
                 }}
-              />
-            </div>
-          ) : (
+              >
+                🎨 Drawing (click to edit)
+              </div>
+            )}
             <div
               style={{
-                padding: "20px",
-                textAlign: "center",
+                padding: "4px 10px",
+                fontSize: "11px",
                 color: "var(--neutral-400)",
-                fontSize: "13px",
+                backgroundColor: "var(--neutral-50, #fafafa)",
+                borderTop: "1px solid var(--neutral-200)",
+                textAlign: "center",
               }}
             >
-              🎨 Drawing (click to edit)
+              Click to edit
             </div>
-          )}
-          <div
-            style={{
-              padding: "4px 10px",
-              fontSize: "11px",
-              color: "var(--neutral-400)",
-              backgroundColor: "var(--neutral-50, #fafafa)",
-              borderTop: "1px solid var(--neutral-200)",
-              textAlign: "center",
-            }}
-          >
-            Click to edit
           </div>
+          {isOpen && (
+            <ExcalidrawOverlay
+              data={data}
+              onSave={handleSave}
+              onClose={() => setIsOpen(false)}
+            />
+          )}
         </div>
       );
     },
