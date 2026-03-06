@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 60" fill="none">
+  <style>
+    .logo-text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-weight: 700; font-size: 32px; fill: #1f1f1f; }
+    @media (prefers-color-scheme: dark) { .logo-text { fill: #e5e5e5; } .logo-mark { stroke: #e5e5e5; } }
+  </style>
+  <!-- Mark: flowing knowledge graph — three connected nodes with motion trail -->
+  <g class="logo-mark" stroke="#1f1f1f" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <!-- Motion arc / flow line -->
+    <path d="M8 38 C14 12, 28 12, 34 30 C40 48, 52 48, 52 22" stroke-width="2.8" opacity="0.25"/>
+    <!-- Three knowledge nodes connected -->
+    <circle cx="12" cy="34" r="5" fill="#1f1f1f" stroke="none"/>
+    <circle cx="34" cy="22" r="5" fill="#1f1f1f" stroke="none"/>
+    <circle cx="52" cy="28" r="4" fill="none" stroke-width="2.5"/>
+    <!-- Connection lines -->
+    <line x1="16.5" y1="32" x2="29.5" y2="23.5"/>
+    <line x1="38.5" y1="23" x2="48.5" y2="27"/>
+  </g>
+  <!-- Wordmark -->
+  <text x="68" y="42" class="logo-text">Motion</text>
+</svg>

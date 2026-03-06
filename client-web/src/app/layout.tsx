@@ -5,6 +5,9 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Motion — Knowledge Editor",
   description: "Agent-friendly knowledge base editor powered by GitHub",
+  icons: {
+    icon: "/icon.svg",
+  },
 };
 
 export default function RootLayout({

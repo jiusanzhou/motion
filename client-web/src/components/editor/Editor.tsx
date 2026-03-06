@@ -228,13 +228,7 @@ export function Editor() {
     <div>
       <FrontmatterPanel />
       <div className="mx-auto px-6 py-10 md:px-12" style={{ maxWidth }}>
-        <input
-          key={currentDoc.path}
-          defaultValue={currentDoc.title}
-          onChange={handleTitleChange}
-          placeholder="Untitled"
-          className="mb-4 w-full border-none bg-transparent text-4xl font-bold text-[var(--foreground)] placeholder:text-[var(--neutral-300)] focus:outline-none"
-        />
+
         <div className="motion-editor" ref={editorContainerRef}>
           <BlockNoteView
             editor={editor}
