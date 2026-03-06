@@ -1,0 +1,23 @@
+{
+  "name": "@motion/mcp-server",
+  "version": "0.1.0",
+  "description": "MCP server bridge for Motion — connects Claude Desktop to Motion's browser-based knowledge base",
+  "type": "module",
+  "bin": {
+    "motion-mcp": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "ws": "^8.18.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/ws": "^8.5.13",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}
