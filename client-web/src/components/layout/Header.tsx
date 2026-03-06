@@ -59,7 +59,7 @@ export function Header() {
   const breadcrumbs = currentDoc?.path.split("/") ?? [];
 
   return (
-    <header className="flex h-12 shrink-0 items-center justify-between border-b border-[var(--neutral-100)] px-4 bg-[var(--background)]">
+    <header className="flex h-12 shrink-0 items-center justify-between border-b border-[var(--neutral-100)] px-2 sm:px-4 bg-[var(--background)]">
       <div className="flex items-center gap-1 text-sm text-[var(--neutral-500)]">
         {/* Sidebar toggle */}
         {!sidebarOpen && (

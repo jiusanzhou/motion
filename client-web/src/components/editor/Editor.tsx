@@ -227,7 +227,7 @@ export function Editor() {
   return (
     <div>
       <FrontmatterPanel />
-      <div className="mx-auto px-4 py-2 sm:px-4 md:px-12 md:py-10 max-md:!max-w-full" style={{ maxWidth }}>
+      <div className="mx-auto px-2 py-2 sm:px-4 md:px-12 md:py-10 max-md:!max-w-full" style={{ maxWidth }}>
 
         <div className="motion-editor" ref={editorContainerRef}>
           <BlockNoteView

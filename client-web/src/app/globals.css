@@ -154,17 +154,33 @@ main {
   --bn-colors-editor-text: var(--foreground);
 }
 
-/* Mobile: reduce BlockNote internal padding */
+/* Mobile: reduce all BlockNote padding and hide drag UI */
 @media (max-width: 767px) {
-  .motion-editor .bn-side-menu {
-    display: none !important;
-  }
-}
-
-@media (max-width: 767px) {
+  .motion-editor .bn-side-menu,
   .motion-editor .bn-drag-handle,
   .motion-editor [data-drag-handle],
   .motion-editor .bn-drag-handle-menu {
     display: none !important;
+  }
+
+  .motion-editor .bn-container,
+  .motion-editor .bn-editor,
+  .motion-editor .bn-block-outer,
+  .motion-editor .bn-block,
+  .motion-editor .bn-block-content {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  .motion-editor .bn-block-group {
+    padding-left: 0 !important;
+    margin-left: 0 !important;
+  }
+
+  .motion-editor [class*="bn-inline-content"] {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
   }
 }
