@@ -173,7 +173,7 @@ export function Header() {
           title="AI Chat (⌘⇧A)"
           onClick={() => useAIStore.getState().setChatOpen(!useAIStore.getState().chatOpen)}
         >
-          <Bot className="h-4 w-4" />
+          <Bot style={{ width: 16, height: 16 }} />
         </Button>
         <Button
           variant="ghost"
@@ -181,7 +181,7 @@ export function Header() {
           title="AI Settings"
           onClick={() => useAIStore.getState().setSettingsOpen(true)}
         >
-          <Settings2 className="h-4 w-4" />
+          <Settings2 style={{ width: 16, height: 16 }} />
         </Button>
 
         {currentDoc && (
