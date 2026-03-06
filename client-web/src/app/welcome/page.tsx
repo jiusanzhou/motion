@@ -121,7 +121,7 @@ export default function WelcomePage() {
           Your data lives in GitHub — private, versioned, and always under your control.
         </p>
         <div className="flex items-center justify-center gap-4">
-          <Link
+          <a
             href="/api/auth/signin"
             className="inline-flex items-center gap-2 rounded-lg bg-[var(--foreground)] px-6 py-2.5 text-sm font-medium text-[var(--background)] transition-opacity hover:opacity-90"
           >
@@ -129,7 +129,7 @@ export default function WelcomePage() {
             <svg viewBox="0 0 16 16" fill="currentColor" className="h-3.5 w-3.5">
               <path fillRule="evenodd" d="M2 8a.75.75 0 0 1 .75-.75h8.69L8.22 4.03a.75.75 0 0 1 1.06-1.06l4.5 4.5a.75.75 0 0 1 0 1.06l-4.5 4.5a.75.75 0 0 1-1.06-1.06l3.22-3.22H2.75A.75.75 0 0 1 2 8Z" clipRule="evenodd" />
             </svg>
-          </Link>
+          </a>
           <a
             href="https://github.com/jiusanzhou/motion"
             target="_blank"
@@ -193,7 +193,7 @@ export default function WelcomePage() {
           <p className="mb-8 text-[var(--neutral-500)]">
             Sign in with GitHub and connect a repo to start building your knowledge base.
           </p>
-          <Link
+          <a
             href="/api/auth/signin"
             className="inline-flex items-center gap-2 rounded-lg bg-[var(--foreground)] px-6 py-2.5 text-sm font-medium text-[var(--background)] transition-opacity hover:opacity-90"
           >
@@ -201,7 +201,7 @@ export default function WelcomePage() {
             <svg viewBox="0 0 16 16" fill="currentColor" className="h-3.5 w-3.5">
               <path fillRule="evenodd" d="M2 8a.75.75 0 0 1 .75-.75h8.69L8.22 4.03a.75.75 0 0 1 1.06-1.06l4.5 4.5a.75.75 0 0 1 0 1.06l-4.5 4.5a.75.75 0 0 1-1.06-1.06l3.22-3.22H2.75A.75.75 0 0 1 2 8Z" clipRule="evenodd" />
             </svg>
-          </Link>
+          </a>
         </div>
       </section>
 
