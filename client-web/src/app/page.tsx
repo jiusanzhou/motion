@@ -21,8 +21,18 @@ export default function Home() {
   const [checked, setChecked] = useState(false);
 
   useEffect(() => {
-    if (status === "loading") return;
-    if (status === "unauthenticated") {
+    // If user has repo config in localStorage, they've used the app before — let them in
+    const hasRepoConfig = !!localStorage.getItem("motion:repo-config");
+    
+    if (status === "loading") {
+      // While loading, if they have local config, show the app immediately
+      if (hasRepoConfig) {
+        setChecked(true);
+      }
+      return;
+    }
+    
+    if (status === "unauthenticated" && !hasRepoConfig) {
       router.replace("/welcome");
     } else {
       setChecked(true);
