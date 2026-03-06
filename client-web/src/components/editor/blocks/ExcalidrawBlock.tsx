@@ -2,7 +2,7 @@
 
 import { createReactBlockSpec } from "@blocknote/react";
 import { defaultProps } from "@blocknote/core";
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import dynamic from "next/dynamic";
 
@@ -24,6 +24,25 @@ const ExcalidrawComponent = dynamic(
 const exportToSvgDynamic = () =>
   import("@excalidraw/excalidraw").then((mod) => mod.exportToSvg);
 
+// Global state to track which block is being edited (only one at a time)
+let activeExcalidrawBlockId: string | null = null;
+const listeners = new Set<() => void>();
+function setActiveBlock(id: string | null) {
+  activeExcalidrawBlockId = id;
+  listeners.forEach((fn) => fn());
+}
+function useActiveBlock(blockId: string) {
+  const [isOpen, setIsOpen] = useState(false);
+  useEffect(() => {
+    const listener = () => {
+      setIsOpen(activeExcalidrawBlockId === blockId);
+    };
+    listeners.add(listener);
+    return () => { listeners.delete(listener); };
+  }, [blockId]);
+  return isOpen;
+}
+
 function ExcalidrawOverlay({
   data,
   onSave,
@@ -34,11 +53,8 @@ function ExcalidrawOverlay({
   onClose: () => void;
 }) {
   const [excalidrawAPI, setExcalidrawAPI] = useState<any>(null);
-  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
-    // Prevent body scroll while overlay is open
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = "";
@@ -81,9 +97,6 @@ function ExcalidrawOverlay({
         "viewBox",
         svg.getAttribute("viewBox") || "0 0 100 100"
       );
-      svg.style.width = "100%";
-      svg.style.height = "auto";
-      svg.style.maxHeight = "200px";
       preview = new XMLSerializer().serializeToString(svg);
     } catch {
       // preview generation failed
@@ -92,9 +105,7 @@ function ExcalidrawOverlay({
     onSave(json, preview);
   }, [excalidrawAPI, onSave]);
 
-  if (!mounted) return null;
-
-  const overlay = (
+  return createPortal(
     <div
       style={{
         position: "fixed",
@@ -157,10 +168,9 @@ function ExcalidrawOverlay({
           theme="light"
         />
       </div>
-    </div>
+    </div>,
+    document.body
   );
-
-  return createPortal(overlay, document.body);
 }
 
 function sanitizeSvg(raw: string): string {
@@ -179,81 +189,77 @@ export const ExcalidrawBlock = createReactBlockSpec(
   },
   {
     render: (props) => {
-      const [isOpen, setIsOpen] = useState(false);
+      const blockId = props.block.id;
+      const isOpen = useActiveBlock(blockId);
       const data = props.block.props.data;
       const preview = props.block.props.preview;
+
+      const handleOpen = useCallback(() => {
+        setActiveBlock(blockId);
+      }, [blockId]);
+
+      const handleClose = useCallback(() => {
+        setActiveBlock(null);
+      }, []);
 
       const handleSave = useCallback(
         (json: string, svgPreview: string) => {
           props.editor.updateBlock(props.block, {
             props: { data: json, preview: svgPreview },
           });
-          setIsOpen(false);
+          setActiveBlock(null);
         },
         [props.editor, props.block]
       );
 
       // Empty state
-      if (!data && !isOpen) {
+      if (!data) {
         return (
-          <div
-            onClick={() => setIsOpen(true)}
-            style={{
-              padding: "24px",
-              border: "1px dashed var(--neutral-200)",
-              borderRadius: "8px",
-              backgroundColor: "var(--neutral-50, #fafafa)",
-              cursor: "pointer",
-              textAlign: "center",
-              transition: "border-color 0.15s",
-            }}
-            onMouseEnter={(e) =>
-              (e.currentTarget.style.borderColor = "var(--foreground)")
-            }
-            onMouseLeave={(e) =>
-              (e.currentTarget.style.borderColor = "var(--neutral-200)")
-            }
-          >
-            <div style={{ fontSize: "20px", marginBottom: "4px" }}>🎨</div>
+          <div>
             <div
+              onClick={handleOpen}
               style={{
-                fontSize: "13px",
-                fontWeight: 500,
-                color: "var(--neutral-500, #6b7280)",
+                padding: "24px",
+                border: "1px dashed var(--neutral-200)",
+                borderRadius: "8px",
+                backgroundColor: "var(--neutral-50, #fafafa)",
+                cursor: "pointer",
+                textAlign: "center",
               }}
             >
-              Click to create a drawing
+              <div style={{ fontSize: "20px", marginBottom: "4px" }}>🎨</div>
+              <div
+                style={{
+                  fontSize: "13px",
+                  fontWeight: 500,
+                  color: "var(--neutral-500, #6b7280)",
+                }}
+              >
+                Click to create a drawing
+              </div>
             </div>
             {isOpen && (
               <ExcalidrawOverlay
                 data={data}
                 onSave={handleSave}
-                onClose={() => setIsOpen(false)}
+                onClose={handleClose}
               />
             )}
           </div>
         );
       }
 
-      // Has drawing — show preview
+      // Has drawing
       return (
         <div>
           <div
-            onClick={() => setIsOpen(true)}
+            onClick={handleOpen}
             style={{
               border: "1px solid var(--neutral-200)",
               borderRadius: "8px",
               overflow: "hidden",
               cursor: "pointer",
-              transition: "box-shadow 0.15s",
             }}
-            onMouseEnter={(e) =>
-              (e.currentTarget.style.boxShadow =
-                "0 0 0 2px var(--foreground)")
-            }
-            onMouseLeave={(e) =>
-              (e.currentTarget.style.boxShadow = "none")
-            }
           >
             {preview ? (
               <div
@@ -307,7 +313,7 @@ export const ExcalidrawBlock = createReactBlockSpec(
             <ExcalidrawOverlay
               data={data}
               onSave={handleSave}
-              onClose={() => setIsOpen(false)}
+              onClose={handleClose}
             />
           )}
         </div>
