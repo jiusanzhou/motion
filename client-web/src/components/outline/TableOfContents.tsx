@@ -19,11 +19,17 @@ export function TableOfContents() {
     const editor = document.querySelector(".motion-editor");
     if (!editor) return;
 
-    const headings = editor.querySelectorAll("h1, h2, h3");
+    const headings = editor.querySelectorAll(
+      ".bn-block-content h1, .bn-block-content h2, .bn-block-content h3"
+    );
     const tocItems: TocItem[] = [];
 
     headings.forEach((el, i) => {
-      const id = `toc-heading-${i}`;
+      const slug = (el.textContent ?? "")
+        .toLowerCase()
+        .replace(/[^a-z0-9\u4e00-\u9fff]+/g, "-")
+        .replace(/(^-|-$)/g, "");
+      const id = `heading-${slug || i}`;
       el.id = id;
       tocItems.push({
         id,
@@ -69,7 +75,7 @@ export function TableOfContents() {
           }
         }
       },
-      { root: document.querySelector("main"), rootMargin: "-20% 0% -60% 0%" }
+      { rootMargin: "-20% 0% -60% 0%" }
     );
 
     observerRef.current = observer;
@@ -85,16 +91,7 @@ export function TableOfContents() {
   const scrollTo = useCallback((id: string) => {
     const el = document.getElementById(id);
     if (!el) return;
-    // Find the scrollable main container
-    const scrollContainer = document.querySelector("main");
-    if (scrollContainer) {
-      const containerRect = scrollContainer.getBoundingClientRect();
-      const elRect = el.getBoundingClientRect();
-      const offset = elRect.top - containerRect.top + scrollContainer.scrollTop - 20;
-      scrollContainer.scrollTo({ top: offset, behavior: "smooth" });
-    } else {
-      el.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
   }, []);
 
   if (items.length === 0) return null;

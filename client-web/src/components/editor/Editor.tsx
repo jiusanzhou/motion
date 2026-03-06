@@ -7,6 +7,8 @@ import "@blocknote/core/fonts/inter.css";
 import "@blocknote/mantine/style.css";
 import { useMotionStore, EDITOR_WIDTHS } from "@/store";
 import { useThemeStore } from "@/store/theme";
+import { resolveWikiLinkPath } from "@/lib/wikilink";
+import { flattenTree } from "@/lib/tree-utils";
 import { FrontmatterPanel } from "./FrontmatterPanel";
 import { AgentView } from "./AgentView";
 
@@ -24,6 +26,30 @@ export function Editor() {
   const lastContentRef = useRef<string | null>(null);
   const loadingRef = useRef(false);
   const [editorReady, setEditorReady] = useState(false);
+
+  // Unescape backslash-escaped quotes inside fenced code blocks
+  function unescapeCodeBlocks(md: string): string {
+    return md.replace(/(```[\s\S]*?```)/g, (block) =>
+      block.replace(/\\"/g, '"')
+    );
+  }
+
+  // Convert [[page-name]] to [page-name](#wiki:page-name) for editor rendering
+  function wikiLinksToMarkdown(md: string): string {
+    return md.replace(/\[\[([^\]]+)\]\]/g, (_, name: string) => {
+      const trimmed = name.trim();
+      return `[${trimmed}](#wiki:${trimmed})`;
+    });
+  }
+
+  // Reverse: convert [page](#wiki:page) back to [[page]] for saving
+  function markdownToWikiLinks(md: string): string {
+    return md.replace(/\[([^\]]+)\]\(#wiki:[^)]+\)/g, (_, name: string) => {
+      return `[[${name}]]`;
+    });
+  }
+
+  const editorContainerRef = useRef<HTMLDivElement>(null);
 
   const editor = useCreateBlockNote();
 
@@ -73,7 +99,8 @@ export function Editor() {
         if (!docContent) {
           editor.replaceBlocks(editor.document, []);
         } else {
-          const blocks = await editor.tryParseMarkdownToBlocks(docContent);
+          const preprocessed = wikiLinksToMarkdown(unescapeCodeBlocks(docContent));
+          const blocks = await editor.tryParseMarkdownToBlocks(preprocessed);
           // Check if user already switched to another file
           if (prevPathRef.current !== docPath) return;
           editor.replaceBlocks(editor.document, blocks);
@@ -103,12 +130,41 @@ export function Editor() {
     };
   }, []);
 
+  // Handle wiki link clicks in editor
+  useEffect(() => {
+    const container = editorContainerRef.current;
+    if (!container) return;
+
+    function handleClick(e: MouseEvent) {
+      const target = e.target as HTMLElement;
+      const anchor = target.closest("a");
+      if (!anchor) return;
+      const href = anchor.getAttribute("href");
+      if (!href || !href.startsWith("#wiki:")) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      const pageName = href.slice("#wiki:".length);
+      const state = useMotionStore.getState();
+      const allPaths = flattenTree(state.fileTree).map((n) => n.path);
+      const resolved = resolveWikiLinkPath(pageName, allPaths);
+      if (resolved) {
+        state.openFile(resolved);
+      }
+    }
+
+    container.addEventListener("click", handleClick);
+    return () => container.removeEventListener("click", handleClick);
+  }, []);
+
   const handleEditorChange = useCallback(async () => {
     // Don't trigger during content loading
     if (loadingRef.current) return;
 
     try {
-      const markdown = await editor.blocksToMarkdownLossy(editor.document);
+      let markdown = await editor.blocksToMarkdownLossy(editor.document);
+      markdown = markdownToWikiLinks(markdown);
       if (markdown === lastContentRef.current) return;
       lastContentRef.current = markdown;
       updateDocContent(markdown);
@@ -166,7 +222,7 @@ export function Editor() {
           placeholder="Untitled"
           className="mb-4 w-full border-none bg-transparent text-4xl font-bold text-[var(--foreground)] placeholder:text-[var(--neutral-300)] focus:outline-none"
         />
-        <div className="motion-editor">
+        <div className="motion-editor" ref={editorContainerRef}>
           <BlockNoteView
             editor={editor}
             onChange={handleEditorChange}

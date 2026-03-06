@@ -15,6 +15,7 @@ interface SearchState {
   indexBuilt: boolean;
 
   buildIndex: (docs: SearchDocument[]) => void;
+  addDocument: (doc: SearchDocument) => void;
   search: (query: string) => SearchResult[];
   clearIndex: () => void;
 }
@@ -42,6 +43,22 @@ export const useSearchStore = create<SearchState>((set, get) => ({
       minMatchCharLength: 2,
     });
     set({ documents: docs, fuse, indexBuilt: true });
+  },
+
+  addDocument: (doc) => {
+    const { fuse, documents } = get();
+    if (!fuse) return;
+    // Update existing document or add new one
+    const idx = documents.findIndex((d) => d.path === doc.path);
+    if (idx >= 0) {
+      documents[idx] = doc;
+      // Rebuild fuse index with updated documents
+      fuse.setCollection([...documents]);
+    } else {
+      documents.push(doc);
+      fuse.add(doc);
+    }
+    set({ documents: [...documents] });
   },
 
   search: (query) => {

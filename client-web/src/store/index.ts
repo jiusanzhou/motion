@@ -10,6 +10,7 @@ import type {
   SidebarView,
 } from "@/types";
 import { useToastStore } from "@/store/toast";
+import { useSearchStore } from "@/store/search";
 import type { CacheInfo } from "@/lib/cache";
 import type { CachedGitHubStorageProvider } from "@/lib/storage/cached-github";
 
@@ -263,6 +264,13 @@ export const useMotionStore = create<MotionState>((set, get) => ({
         saveStatus: "idle",
         dirty: false,
         tabs: newTabs,
+      });
+
+      // Index opened file content for search
+      useSearchStore.getState().addDocument({
+        path: doc.path,
+        title: doc.title,
+        content: doc.content ?? "",
       });
     } catch (err) {
       useToastStore
