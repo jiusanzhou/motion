@@ -108,6 +108,16 @@ export function AISettingsDialog() {
             />
             <span className="text-sm text-[var(--foreground)]">Enable AI auto-complete</span>
           </label>
+
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={config.autoTaggingEnabled}
+              onChange={(e) => setConfig({ autoTaggingEnabled: e.target.checked })}
+              className="accent-[var(--foreground)]"
+            />
+            <span className="text-sm text-[var(--foreground)]">Auto-generate tags &amp; summary on save</span>
+          </label>
         </div>
 
         <div className="mt-6 flex justify-end gap-2">

@@ -300,8 +300,26 @@ export const useMotionStore = create<MotionState>((set, get) => ({
     if (!provider || !currentDoc) return;
     set({ saveStatus: "saving" });
     try {
+      // Auto-tag: generate summary + tags if enabled
+      let docToSave = currentDoc;
+      const { useAIStore } = await import("@/store/ai");
+      const aiConfig = useAIStore.getState().config;
+      if (aiConfig.autoTaggingEnabled && aiConfig.apiKey) {
+        try {
+          const { generateDocMeta } = await import("@/lib/ai/client");
+          const meta = await generateDocMeta(aiConfig, currentDoc.title, currentDoc.content ?? "");
+          if (meta.summary || meta.tags.length > 0) {
+            const updatedFrontmatter = { ...currentDoc.frontmatter };
+            if (meta.summary) updatedFrontmatter.summary = meta.summary;
+            if (meta.tags.length > 0) updatedFrontmatter.tags = meta.tags;
+            docToSave = { ...currentDoc, frontmatter: updatedFrontmatter };
+          }
+        } catch {
+          // Non-fatal; continue with original doc
+        }
+      }
       const { serializeDocument } = await import("@/lib/markdown");
-      const content = serializeDocument(currentDoc);
+      const content = serializeDocument(docToSave);
       const updated = await provider.writeFile(
         currentDoc.path,
         content,

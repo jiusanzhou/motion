@@ -1,4 +1,10 @@
 import type { AIConfig } from "@/store/ai";
+import { SYSTEM_PROMPTS } from "@/lib/ai/prompts";
+
+export interface DocMeta {
+  summary: string;
+  tags: string[];
+}
 
 export interface ChatMessage {
   role: "system" | "user" | "assistant";
@@ -95,4 +101,27 @@ export async function chat(
   let result = "";
   await streamChat(config, messages, (chunk) => { result += chunk; }, signal);
   return result;
+}
+
+export async function generateDocMeta(
+  config: AIConfig,
+  title: string,
+  content: string,
+  signal?: AbortSignal
+): Promise<DocMeta> {
+  const text = await chat(config, [
+    { role: "system", content: SYSTEM_PROMPTS.docMeta },
+    { role: "user", content: `Title: ${title}\n\nContent:\n${content.slice(0, 4000)}` },
+  ], signal);
+  try {
+    const parsed = JSON.parse(text);
+    return {
+      summary: typeof parsed.summary === "string" ? parsed.summary : "",
+      tags: Array.isArray(parsed.tags)
+        ? parsed.tags.filter((t: unknown) => typeof t === "string")
+        : [],
+    };
+  } catch {
+    return { summary: "", tags: [] };
+  }
 }

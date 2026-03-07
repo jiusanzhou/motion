@@ -7,6 +7,7 @@ export const SYSTEM_PROMPTS = {
   generate: "You are a writing assistant. Generate content based on the user's prompt. Write in markdown format. Be concise and helpful.",
   chat: "You are a helpful AI writing assistant embedded in a knowledge base editor called Motion. You help users write, edit, and organize their documents. When providing content to insert into documents, wrap it in a markdown code block. Be concise and helpful.",
   autocomplete: "You are an autocomplete engine. Given the text before the cursor, predict the most likely continuation. Return ONLY the completion text (1-2 sentences max), nothing else. If you can't predict anything meaningful, return an empty string.",
+  docMeta: "You are a document metadata extractor. Given a document title and content, generate a concise one-sentence summary and up to 5 relevant tags. Respond with ONLY a JSON object: {\"summary\": \"...\", \"tags\": [\"tag1\", \"tag2\"]}. No markdown, no explanation.",
 } as const;
 
 export type PromptAction = keyof typeof SYSTEM_PROMPTS;

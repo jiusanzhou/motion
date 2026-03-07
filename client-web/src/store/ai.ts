@@ -9,6 +9,7 @@ export interface AIConfig {
   authMode: AuthMode;
   customHeaderName: string;
   autoCompleteEnabled: boolean;
+  autoTaggingEnabled: boolean;
 }
 
 interface AIStore {
@@ -30,6 +31,7 @@ function loadConfig(): AIConfig {
     authMode: "bearer",
     customHeaderName: "",
     autoCompleteEnabled: false,
+    autoTaggingEnabled: false,
   };
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
