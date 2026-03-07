@@ -276,6 +276,15 @@ export const useMotionStore = create<MotionState>((set, get) => ({
         title: doc.title,
         content: doc.content ?? "",
       });
+
+      // Lazy semantic embedding (non-blocking)
+      if (typeof window !== "undefined") {
+        import("@/store/embedding").then(({ useEmbeddingStore }) => {
+          useEmbeddingStore
+            .getState()
+            .embedDocument(doc.path, doc.title, doc.content ?? "");
+        });
+      }
     } catch (err) {
       useToastStore
         .getState()

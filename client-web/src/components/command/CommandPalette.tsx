@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useCallback, useState, useMemo } from "react";
+import { useEffect, useCallback, useState, useMemo, useRef } from "react";
 import { Command } from "cmdk";
 import { useMotionStore } from "@/store";
 import { useThemeStore } from "@/store/theme";
 import { useSearchStore, type SearchResult } from "@/store/search";
+import { useEmbeddingStore } from "@/store/embedding";
 import type { TreeNode } from "@/types";
 import {
   FileText,
@@ -14,6 +15,8 @@ import {
   PanelLeft,
   FilePlus,
   Type,
+  Sparkles,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -29,11 +32,19 @@ function flattenTree(nodes: TreeNode[]): TreeNode[] {
 export function CommandPalette() {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const [mode, setMode] = useState<"files" | "search">("files");
+  const [mode, setMode] = useState<"files" | "search" | "semantic">("files");
   const { fileTree, openFile, toggleSidebar, setConnectDialogOpen } =
     useMotionStore();
   const { theme, setTheme } = useThemeStore();
   const { search, indexBuilt } = useSearchStore();
+  const { semanticSearch, modelProgress, isEmbedding, embeddings } =
+    useEmbeddingStore();
+
+  const [semanticResults, setSemanticResults] = useState<
+    Array<{ path: string; title: string; score: number }>
+  >([]);
+  const semanticDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const embeddedCount = embeddings.size;
 
   const files = useMemo(() => flattenTree(fileTree), [fileTree]);
 
@@ -41,6 +52,24 @@ export function CommandPalette() {
     if (mode !== "search" || !query.trim()) return [];
     return search(query);
   }, [mode, query, search]);
+
+  // Debounced semantic search
+  useEffect(() => {
+    if (mode !== "semantic" || !query.trim()) {
+      setSemanticResults([]);
+      return;
+    }
+    if (semanticDebounceRef.current)
+      clearTimeout(semanticDebounceRef.current);
+    semanticDebounceRef.current = setTimeout(async () => {
+      const results = await semanticSearch(query);
+      setSemanticResults(results);
+    }, 400);
+    return () => {
+      if (semanticDebounceRef.current)
+        clearTimeout(semanticDebounceRef.current);
+    };
+  }, [mode, query, semanticSearch]);
 
   // Cmd+K listener
   useEffect(() => {
@@ -122,6 +151,18 @@ export function CommandPalette() {
               )}
             >
               Full-text Search
+            </button>
+            <button
+              onClick={() => setMode("semantic")}
+              className={cn(
+                "flex items-center gap-1 rounded px-2 py-0.5 text-xs transition-colors",
+                mode === "semantic"
+                  ? "bg-[var(--neutral-200)] text-[var(--foreground)]"
+                  : "text-[var(--neutral-500)] hover:text-[var(--foreground)]"
+              )}
+            >
+              <Sparkles className="h-3 w-3" />
+              Semantic
             </button>
           </div>
 
@@ -244,6 +285,58 @@ export function CommandPalette() {
                       ))}
                   </Command.Item>
                 ))}
+              </Command.Group>
+            )}
+
+            {mode === "semantic" && (
+              <Command.Group>
+                {embeddedCount === 0 && (
+                  <div className="px-3 py-6 text-center text-sm text-[var(--neutral-400)]">
+                    No documents indexed yet. Open some files first.
+                  </div>
+                )}
+                {embeddedCount > 0 && modelProgress < 100 && (
+                  <div className="flex flex-col items-center gap-2 px-3 py-6">
+                    <Loader2 className="h-4 w-4 animate-spin text-[var(--neutral-400)]" />
+                    <span className="text-xs text-[var(--neutral-400)]">
+                      Loading model… {modelProgress}%
+                    </span>
+                  </div>
+                )}
+                {embeddedCount > 0 && modelProgress === 100 && (
+                  <>
+                    {isEmbedding && !semanticResults.length && (
+                      <div className="flex items-center justify-center gap-2 px-3 py-4">
+                        <Loader2 className="h-3 w-3 animate-spin text-[var(--neutral-400)]" />
+                        <span className="text-xs text-[var(--neutral-400)]">Searching…</span>
+                      </div>
+                    )}
+                    {!query && (
+                      <div className="px-3 py-6 text-center text-sm text-[var(--neutral-400)]">
+                        Type a query for semantic search ({embeddedCount} docs indexed)
+                      </div>
+                    )}
+                    {semanticResults.map((result) => (
+                      <Command.Item
+                        key={result.path}
+                        value={result.path}
+                        onSelect={() => handleSelect(result.path)}
+                        className="flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm text-[var(--foreground)] aria-selected:bg-[var(--neutral-100)]"
+                      >
+                        <Sparkles className="h-4 w-4 shrink-0 text-[var(--neutral-400)]" />
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate font-medium">{result.title}</div>
+                          <div className="truncate text-xs text-[var(--neutral-400)]">
+                            {result.path}
+                          </div>
+                        </div>
+                        <span className="shrink-0 text-xs text-[var(--neutral-400)]">
+                          {Math.round(result.score * 100)}%
+                        </span>
+                      </Command.Item>
+                    ))}
+                  </>
+                )}
               </Command.Group>
             )}
           </Command.List>

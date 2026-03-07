@@ -34,6 +34,7 @@ import {
   Trash2,
   Download,
   Upload,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { SidebarView } from "@/types";
@@ -45,6 +46,7 @@ import {
   readDroppedFiles,
   readInputFiles,
 } from "@/lib/import-export";
+import { useEmbeddingStore } from "@/store/embedding";
 
 const viewIcons: Record<SidebarView, React.ReactNode> = {
   files: <FolderTree className="h-4 w-4" />,
@@ -65,6 +67,7 @@ export function Sidebar() {
     provider,
     repoConfig,
     fileTree,
+    currentDoc,
     setConnectDialogOpen,
     disconnectRepo,
     createFile,
@@ -79,6 +82,13 @@ export function Sidebar() {
   } = useMotionStore();
   const { data: session } = useSession();
   const addToast = useToastStore((s) => s.addToast);
+  const { findSimilar, embeddings } = useEmbeddingStore();
+
+  // Related docs for the current file
+  const relatedDocs =
+    currentDoc && sidebarView === "files"
+      ? findSimilar(currentDoc.path, 5).filter((d) => d.score > 0.4)
+      : [];
 
   const [newFileDialogOpen, setNewFileDialogOpen] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(() => {
@@ -425,6 +435,30 @@ export function Sidebar() {
             </div>
           )}
           {sidebarView === "files" && <FileTree />}
+          {sidebarView === "files" && relatedDocs.length > 0 && (
+            <div className="border-t border-[var(--neutral-100)] px-2 py-2">
+              <div className="mb-1.5 flex items-center gap-1 px-1 text-xs text-[var(--neutral-400)]">
+                <Sparkles className="h-3 w-3" />
+                Related
+              </div>
+              {relatedDocs.map((doc) => (
+                <button
+                  key={doc.path}
+                  onClick={() =>
+                    useMotionStore.getState().openFile(doc.path)
+                  }
+                  className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left hover:bg-[var(--neutral-100)] transition-colors"
+                >
+                  <span className="min-w-0 flex-1 truncate text-xs text-[var(--neutral-700)]">
+                    {doc.title}
+                  </span>
+                  <span className="shrink-0 text-xs text-[var(--neutral-400)]">
+                    {Math.round(doc.score * 100)}%
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
           {sidebarView === "graph" && <GraphView />}
           {sidebarView === "tags" && <TagView />}
         </div>
