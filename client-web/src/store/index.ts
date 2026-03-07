@@ -13,6 +13,7 @@ import { useToastStore } from "@/store/toast";
 import { useSearchStore } from "@/store/search";
 import type { CacheInfo } from "@/lib/cache";
 import type { CachedGitHubStorageProvider } from "@/lib/storage/cached-github";
+import { trackEvent } from "@/lib/analytics";
 
 const REPO_CONFIG_KEY = "motion:repo-config";
 const REPOS_KEY = "motion:repos";
@@ -313,6 +314,7 @@ export const useMotionStore = create<MotionState>((set, get) => ({
             if (meta.summary) updatedFrontmatter.summary = meta.summary;
             if (meta.tags.length > 0) updatedFrontmatter.tags = meta.tags;
             docToSave = { ...currentDoc, frontmatter: updatedFrontmatter };
+            trackEvent("ai_auto_tag");
           }
         } catch {
           // Non-fatal; continue with original doc
@@ -337,6 +339,7 @@ export const useMotionStore = create<MotionState>((set, get) => ({
         dirty: false,
         tabs: newTabs,
       });
+      trackEvent("document_save");
       setTimeout(() => {
         if (get().saveStatus === "saved") {
           set({ saveStatus: "idle" });

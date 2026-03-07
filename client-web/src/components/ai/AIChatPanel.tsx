@@ -5,6 +5,7 @@ import { useAIStore } from "@/store/ai";
 import { useEmbeddingStore } from "@/store/embedding";
 import { streamChat, type ChatMessage } from "@/lib/ai/client";
 import { SYSTEM_PROMPTS } from "@/lib/ai/prompts";
+import { trackEvent } from "@/lib/analytics";
 
 interface Message {
   role: "user" | "assistant";
@@ -49,6 +50,7 @@ export function AIChatPanel() {
     const text = input.trim();
     if (!text || loading) return;
 
+    trackEvent("ai_chat_message");
     const userMsg: Message = { role: "user", content: text };
     const newMessages = [...messages, userMsg];
     setMessages(newMessages);

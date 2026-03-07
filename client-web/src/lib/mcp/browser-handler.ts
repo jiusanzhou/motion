@@ -3,6 +3,7 @@ import type { MCPRequest, MCPResponse, RelayMessage } from "./protocol";
 import { MCP_METHODS } from "./protocol";
 import { flattenTree } from "@/lib/tree-utils";
 import { extractWikiLinks, resolveWikiLinkPath } from "@/lib/wikilink";
+import { trackEvent } from "@/lib/analytics";
 
 export interface MCPLogEntry {
   timestamp: number;
@@ -85,6 +86,7 @@ export function createBrowserMCPHandler(opts: {
     ws.onopen = () => {
       reconnectAttempts = 0;
       setStatus("connected");
+      trackEvent("mcp_websocket_connect");
     };
 
     ws.onmessage = async (event) => {

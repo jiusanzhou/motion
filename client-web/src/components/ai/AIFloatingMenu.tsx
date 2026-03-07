@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useAIStore } from "@/store/ai";
 import { streamChat } from "@/lib/ai/client";
 import { SYSTEM_PROMPTS, type PromptAction } from "@/lib/ai/prompts";
+import { trackEvent } from "@/lib/analytics";
 
 const ACTIONS: { key: PromptAction; label: string; icon: string }[] = [
   { key: "rewrite", label: "Rewrite", icon: "✏️" },
@@ -63,6 +64,7 @@ export function AIFloatingMenu() {
 
   const runAction = useCallback(async (action: PromptAction) => {
     if (loading || !selectedText) return;
+    trackEvent("ai_inline_action", { action });
     setLoading(true);
     setResult("");
     setStreamResult("");

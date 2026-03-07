@@ -2,6 +2,12 @@
 
 import { signIn } from "next-auth/react";
 import Link from "next/link";
+import { trackEvent } from "@/lib/analytics";
+
+function handleGitHubSignIn() {
+  trackEvent("github_login_click");
+  signIn("github", { callbackUrl: "/" });
+}
 
 function Logo() {
   return (
@@ -269,7 +275,7 @@ export default function WelcomePage() {
             GitHub
           </a>
           <button
-            onClick={() => signIn("github", { callbackUrl: "/" })}
+            onClick={handleGitHubSignIn}
             className="rounded-lg bg-[var(--foreground)] px-4 py-1.5 text-sm font-medium text-[var(--background)] transition-opacity hover:opacity-90"
           >
             Sign In
@@ -320,7 +326,7 @@ export default function WelcomePage() {
               </p>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-center">
                 <button
-                  onClick={() => signIn("github", { callbackUrl: "/" })}
+                  onClick={handleGitHubSignIn}
                   className="inline-flex items-center justify-center gap-2.5 rounded-lg bg-[var(--foreground)] px-6 py-2.5 text-sm font-medium text-[var(--background)] transition-opacity hover:opacity-90"
                 >
                   <GitHubIcon className="h-4.5 w-4.5" />
@@ -448,7 +454,7 @@ export default function WelcomePage() {
           </p>
           <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
             <button
-              onClick={() => signIn("github", { callbackUrl: "/" })}
+              onClick={handleGitHubSignIn}
               className="inline-flex items-center gap-2 rounded-lg bg-[var(--foreground)] px-6 py-2.5 text-sm font-medium text-[var(--background)] transition-opacity hover:opacity-90"
             >
               <GitHubIcon className="h-4 w-4" />
