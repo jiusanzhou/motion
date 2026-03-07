@@ -9,6 +9,7 @@ import { SYSTEM_PROMPTS } from "@/lib/ai/prompts";
 interface Message {
   role: "user" | "assistant";
   content: string;
+  sources?: string[]; // document titles used as RAG context
 }
 
 export function AIChatPanel() {
@@ -18,6 +19,8 @@ export function AIChatPanel() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [streaming, setStreaming] = useState("");
+  const [searchingContext, setSearchingContext] = useState(false);
+  const [pendingSources, setPendingSources] = useState<string[]>([]);
   const abortRef = useRef<AbortController | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -52,17 +55,24 @@ export function AIChatPanel() {
     setInput("");
     setLoading(true);
     setStreaming("");
+    setPendingSources([]);
 
     // RAG: retrieve relevant document context
     let systemContent: string = SYSTEM_PROMPTS.chat;
+    let sources: string[] = [];
+
     if (embeddings.size > 0) {
+      setSearchingContext(true);
       const results = await semanticSearch(text, 3);
+      setSearchingContext(false);
       const relevant = results.filter((r) => r.score > 0.35);
       if (relevant.length > 0) {
+        sources = relevant.map((r) => r.title);
         const ctx = relevant
           .map((r) => `### ${r.title}\n${r.snippet}`)
           .join("\n\n");
         systemContent = `${SYSTEM_PROMPTS.chat}\n\n---\nRelevant context from your knowledge base:\n\n${ctx}`;
+        setPendingSources(sources);
       }
     }
 
@@ -80,7 +90,11 @@ export function AIChatPanel() {
         full += chunk;
         setStreaming(full);
       }, controller.signal);
-      setMessages([...newMessages, { role: "assistant", content: full }]);
+      setMessages([...newMessages, {
+        role: "assistant",
+        content: full,
+        sources: sources.length > 0 ? sources : undefined,
+      }]);
     } catch (err) {
       if ((err as Error).name !== "AbortError") {
         setMessages([...newMessages, { role: "assistant", content: `Error: ${(err as Error).message}` }]);
@@ -88,6 +102,8 @@ export function AIChatPanel() {
     } finally {
       setLoading(false);
       setStreaming("");
+      setPendingSources([]);
+      setSearchingContext(false);
       abortRef.current = null;
     }
   }, [input, loading, messages, config, semanticSearch, embeddings]);
@@ -96,10 +112,9 @@ export function AIChatPanel() {
     // Extract code blocks or use full content
     const codeBlockMatch = content.match(/```[\s\S]*?\n([\s\S]*?)```/);
     const textToInsert = codeBlockMatch ? codeBlockMatch[1].trim() : content;
-    
+
     // Copy to clipboard as a simple insert mechanism
     navigator.clipboard.writeText(textToInsert).then(() => {
-      // Use toast if available
       const event = new CustomEvent("motion:toast", { detail: { message: "Copied to clipboard — paste into editor" } });
       window.dispatchEvent(event);
     });
@@ -130,7 +145,7 @@ export function AIChatPanel() {
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-3">
-        {messages.length === 0 && !streaming && (
+        {messages.length === 0 && !streaming && !searchingContext && (
           <div className="flex h-full items-center justify-center text-xs text-[var(--neutral-400)]">
             Ask AI anything about your documents
           </div>
@@ -154,17 +169,31 @@ export function AIChatPanel() {
                 </button>
               )}
             </div>
+            {msg.role === "assistant" && msg.sources && msg.sources.length > 0 && (
+              <div className="mt-1 text-xs text-[var(--neutral-400)]">
+                <span className="mr-1">📚</span>
+                {msg.sources.join(", ")}
+              </div>
+            )}
           </div>
         ))}
+        {searchingContext && (
+          <div className="mb-2 text-xs text-[var(--neutral-400)] italic">
+            Searching your notes...
+          </div>
+        )}
         {streaming && (
           <div className="mb-3">
             <div className="inline-block max-w-[90%] rounded-lg bg-[var(--neutral-100)] px-3 py-2 text-sm text-[var(--foreground)]">
               <div className="whitespace-pre-wrap">{streaming}</div>
             </div>
+            {pendingSources.length > 0 && (
+              <div className="mt-1 text-xs text-[var(--neutral-400)]">
+                <span className="mr-1">📚</span>
+                {pendingSources.join(", ")}
+              </div>
+            )}
           </div>
-        )}
-        {loading && !streaming && embeddings.size > 0 && (
-          <div className="mb-1 text-xs text-[var(--neutral-400)]">Searching knowledge base...</div>
         )}
         <div ref={bottomRef} />
       </div>
