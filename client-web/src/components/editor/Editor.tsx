@@ -59,6 +59,27 @@ export function Editor() {
     );
   }
 
+  // Convert math syntax to ```math code fences for BlockNote parsing.
+  // Handles: $$\n...\n$$ (block), $$eq$$ (inline block), $eq$ (standalone inline on own line)
+  function mathToCodeFence(md: string): string {
+    // Multi-line block math: $$\n...\n$$
+    let result = md.replace(/\$\$\n([\s\S]*?)\n\$\$/g, (_, eq: string) => `\`\`\`math\n${eq}\n\`\`\``);
+    // Single-line block math: $$equation$$
+    result = result.replace(/\$\$([^$\n]+)\$\$/g, (_, eq: string) => `\`\`\`math\n${eq.trim()}\n\`\`\``);
+    // Standalone inline math: $equation$ alone on a line
+    result = result.replace(/^[ \t]*\$([^$\n]+)\$[ \t]*$/gm, (_, eq: string) => `\`\`\`math\n${eq.trim()}\n\`\`\``);
+    return result;
+  }
+
+  // Convert ```math code fences back to $$ math syntax.
+  // Single-line equations use compact $$eq$$ format; multi-line use $$\n...\n$$
+  function codeFenceToMath(md: string): string {
+    return md.replace(/```math\n([\s\S]*?)\n```/g, (_, eq: string) => {
+      const trimmed = eq.trim();
+      return trimmed.includes("\n") ? `$$\n${trimmed}\n$$` : `$$${trimmed}$$`;
+    });
+  }
+
   // Convert [[page-name]] to [page-name](#wiki:page-name) for editor rendering
   function wikiLinksToMarkdown(md: string): string {
     return md.replace(/\[\[([^\]]+)\]\]/g, (_, name: string) => {
@@ -157,8 +178,16 @@ export function Editor() {
         if (!docContent) {
           editor.replaceBlocks(editor.document, []);
         } else {
-          const preprocessed = wikiLinksToMarkdown(unescapeCodeBlocks(docContent));
-          const blocks = await editor.tryParseMarkdownToBlocks(preprocessed);
+          const preprocessed = wikiLinksToMarkdown(unescapeCodeBlocks(mathToCodeFence(docContent)));
+          const rawBlocks = await editor.tryParseMarkdownToBlocks(preprocessed);
+          // Convert ```math code blocks to math blocks
+          const blocks = rawBlocks.map((block: any) => {
+            if (block.type === "codeBlock" && block.props?.language === "math") {
+              const text = (block.content as any[])?.[0]?.text ?? "";
+              return { ...block, type: "math", props: { equation: text }, content: [] };
+            }
+            return block;
+          });
           if (prevPathRef.current !== docPath) return;
           editor.replaceBlocks(editor.document, blocks);
         }
@@ -219,8 +248,20 @@ export function Editor() {
     if (loadingRef.current) return;
 
     try {
-      let markdown = await editor.blocksToMarkdownLossy(editor.document);
-      markdown = markdownToWikiLinks(markdown);
+      // Convert math blocks to ```math code fences for markdown serialization
+      const serializableBlocks = (editor.document as any[]).map((block: any) => {
+        if (block.type === "math") {
+          return {
+            ...block,
+            type: "codeBlock",
+            props: { language: "math" },
+            content: [{ type: "text", text: block.props.equation ?? "", styles: {} }],
+          };
+        }
+        return block;
+      });
+      let markdown = await editor.blocksToMarkdownLossy(serializableBlocks as any);
+      markdown = codeFenceToMath(markdownToWikiLinks(markdown));
       if (markdown === lastContentRef.current) return;
       lastContentRef.current = markdown;
       updateDocContent(markdown);
