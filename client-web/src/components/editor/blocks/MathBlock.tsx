@@ -143,6 +143,9 @@ export const MathBlock = createReactBlockSpec(
                   borderTop: "1px solid var(--neutral-200)",
                   textAlign: "center",
                   opacity: 0.85,
+                  overflowX: "auto",
+                  maxWidth: "100%",
+                  WebkitOverflowScrolling: "touch",
                 }}
               />
             )}
@@ -161,6 +164,9 @@ export const MathBlock = createReactBlockSpec(
             minHeight: "40px",
             borderRadius: "6px",
             transition: "background-color 0.15s",
+            overflowX: "auto",
+            maxWidth: "100%",
+            WebkitOverflowScrolling: "touch",
           }}
           onMouseEnter={(e) =>
             (e.currentTarget.style.backgroundColor =

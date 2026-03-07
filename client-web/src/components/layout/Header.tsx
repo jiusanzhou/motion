@@ -63,22 +63,23 @@ export function Header() {
 
   return (
     <header className="flex h-12 shrink-0 items-center justify-between border-b border-[var(--neutral-100)] px-4 bg-[var(--background)]">
-      <div className="flex items-center gap-1 text-sm text-[var(--neutral-500)]">
+      <div className="flex min-w-0 flex-1 items-center gap-1 overflow-hidden text-sm text-[var(--neutral-500)]">
         {/* Sidebar toggle */}
         {!sidebarOpen && (
           <button
             onClick={toggleSidebar}
-            className="mr-2 rounded-md p-1 text-[var(--neutral-400)] hover:bg-[var(--neutral-100)]"
+            className="mr-2 shrink-0 rounded-md p-1 text-[var(--neutral-400)] hover:bg-[var(--neutral-100)]"
           >
             <Menu className="h-5 w-5" />
           </button>
         )}
 
         {breadcrumbs.map((part, i) => (
-          <span key={i} className="flex items-center gap-1">
-            {i > 0 && <ChevronRight className="h-3 w-3" />}
+          <span key={i} className="flex min-w-0 items-center gap-1">
+            {i > 0 && <ChevronRight className="h-3 w-3 shrink-0" />}
             <span
               className={cn(
+                "truncate",
                 i === breadcrumbs.length - 1
                   ? "text-[var(--foreground)] font-medium"
                   : "text-[var(--neutral-400)]"
@@ -95,7 +96,7 @@ export function Header() {
           <span className="text-[var(--neutral-400)]">No file selected</span>
         )}
       </div>
-      <div className="flex items-center gap-1">
+      <div className="flex shrink-0 items-center gap-1">
         {saveStatus !== "idle" && (
           <span
             className={cn(
