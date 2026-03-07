@@ -15,7 +15,9 @@ export function ToastContainer() {
         <div
           key={toast.id}
           className={cn(
-            "flex items-center gap-3 rounded-lg px-4 py-3 text-sm shadow-lg border min-w-[300px] max-w-[480px]",
+            "flex items-center gap-3 rounded-lg px-4 py-3 text-sm shadow-lg border",
+            "min-w-[300px] max-w-[480px]",
+            "max-md:min-w-[calc(100vw-32px)] max-md:max-w-[calc(100vw-32px)]",
             toast.type === "error"
               ? "bg-red-50 text-red-800 border-red-200 dark:bg-red-950 dark:text-red-200 dark:border-red-800"
               : toast.type === "success"
