@@ -32,11 +32,19 @@ import {
   FileText,
   Database,
   Trash2,
+  Download,
+  Upload,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { SidebarView } from "@/types";
 import { MCPStatusIndicator } from "@/components/mcp/MCPStatus";
 import { useMCPStore } from "@/store/mcp";
+import { useToastStore } from "@/store/toast";
+import {
+  exportRepoAsZip,
+  readDroppedFiles,
+  readInputFiles,
+} from "@/lib/import-export";
 
 const viewIcons: Record<SidebarView, React.ReactNode> = {
   files: <FolderTree className="h-4 w-4" />,
@@ -56,6 +64,7 @@ export function Sidebar() {
     toggleSidebar,
     provider,
     repoConfig,
+    fileTree,
     setConnectDialogOpen,
     disconnectRepo,
     createFile,
@@ -66,8 +75,10 @@ export function Sidebar() {
     connectRepo,
     cacheInfo,
     clearCache,
+    importFiles,
   } = useMotionStore();
   const { data: session } = useSession();
+  const addToast = useToastStore((s) => s.addToast);
 
   const [newFileDialogOpen, setNewFileDialogOpen] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(() => {
@@ -78,6 +89,10 @@ export function Sidebar() {
     return 240;
   });
   const resizingRef = useRef(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
 
   const handleResizeStart = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -154,6 +169,62 @@ export function Sidebar() {
       setShowTemplates(false);
     },
     [createFile]
+  );
+
+  const handleExport = useCallback(async () => {
+    if (!provider || isExporting) return;
+    setIsExporting(true);
+    try {
+      const name = repoConfig ? `${repoConfig.owner}-${repoConfig.repo}` : "motion-export";
+      await exportRepoAsZip(provider, fileTree, name);
+      addToast("Exported successfully", "success");
+    } catch {
+      addToast("Export failed", "error");
+    } finally {
+      setIsExporting(false);
+    }
+  }, [provider, fileTree, repoConfig, isExporting, addToast]);
+
+  const handleImportFiles = useCallback(
+    async (files: Array<{ path: string; content: string }>) => {
+      if (files.length === 0) return;
+      setIsImporting(true);
+      try {
+        const { succeeded, failed } = await importFiles(files);
+        if (failed > 0) {
+          addToast(`Imported ${succeeded} files, ${failed} failed`, "error");
+        } else {
+          addToast(`Imported ${succeeded} file${succeeded === 1 ? "" : "s"}`, "success");
+        }
+      } catch {
+        addToast("Import failed", "error");
+      } finally {
+        setIsImporting(false);
+      }
+    },
+    [importFiles, addToast]
+  );
+
+  const handleDrop = useCallback(
+    async (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragOver(false);
+      if (!provider) return;
+      const files = await readDroppedFiles(e.dataTransfer);
+      await handleImportFiles(files);
+    },
+    [provider, handleImportFiles]
+  );
+
+  const handleFileInputChange = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (!e.target.files) return;
+      const files = await readInputFiles(e.target.files);
+      await handleImportFiles(files);
+      e.target.value = "";
+    },
+    [handleImportFiles]
   );
 
   const menuItemClass =
@@ -272,6 +343,22 @@ export function Sidebar() {
                       <FolderPlus className="h-4 w-4" />
                       New Folder
                     </DropdownMenu.Item>
+                    <DropdownMenu.Separator className="my-1 h-px bg-[var(--neutral-200)]" />
+                    <DropdownMenu.Item
+                      className={menuItemClass}
+                      onSelect={() => fileInputRef.current?.click()}
+                    >
+                      <Upload className="h-4 w-4" />
+                      Import Files
+                    </DropdownMenu.Item>
+                    <DropdownMenu.Item
+                      className={menuItemClass}
+                      onSelect={handleExport}
+                      disabled={isExporting}
+                    >
+                      <Download className="h-4 w-4" />
+                      {isExporting ? "Exporting..." : "Export as ZIP"}
+                    </DropdownMenu.Item>
                   </DropdownMenu.Content>
                 </DropdownMenu.Portal>
               </DropdownMenu.Root>
@@ -308,11 +395,49 @@ export function Sidebar() {
         )}
 
         {/* View content */}
-        <div className="flex-1 overflow-y-auto">
+        <div
+          className={cn(
+            "relative flex-1 overflow-y-auto",
+            isDragOver && "after:absolute after:inset-0 after:rounded after:border-2 after:border-dashed after:border-[var(--neutral-400)] after:bg-[var(--neutral-100)]/60 after:pointer-events-none"
+          )}
+          onDragOver={(e) => {
+            if (!provider) return;
+            e.preventDefault();
+            setIsDragOver(true);
+          }}
+          onDragLeave={(e) => {
+            if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+              setIsDragOver(false);
+            }
+          }}
+          onDrop={handleDrop}
+        >
+          {isDragOver && (
+            <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+              <span className="rounded-md bg-[var(--background)] px-3 py-1.5 text-xs text-[var(--neutral-600)] shadow">
+                Drop to import .md files
+              </span>
+            </div>
+          )}
+          {isImporting && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-[var(--background)]/70">
+              <span className="text-xs text-[var(--neutral-600)]">Importing...</span>
+            </div>
+          )}
           {sidebarView === "files" && <FileTree />}
           {sidebarView === "graph" && <GraphView />}
           {sidebarView === "tags" && <TagView />}
         </div>
+
+        {/* Hidden file input for import */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".md"
+          multiple
+          className="hidden"
+          onChange={handleFileInputChange}
+        />
 
         {/* Bottom: MCP status + auth */}
         <div className="flex flex-col gap-1 border-t border-[var(--neutral-100)] p-2">

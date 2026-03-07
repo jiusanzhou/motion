@@ -121,6 +121,10 @@ interface MotionState {
   closeTab: (path: string) => void;
   switchTab: (path: string) => void;
 
+  importFiles: (
+    files: Array<{ path: string; content: string }>
+  ) => Promise<{ succeeded: number; failed: number }>;
+
   clearCache: () => Promise<void>;
   refreshCacheInfo: () => Promise<void>;
   checkForUpdates: () => Promise<void>;
@@ -518,5 +522,22 @@ export const useMotionStore = create<MotionState>((set, get) => ({
     } catch {
       // Silent failure for background checks
     }
+  },
+
+  importFiles: async (files) => {
+    const { provider } = get();
+    if (!provider) return { succeeded: 0, failed: 0 };
+    let succeeded = 0;
+    let failed = 0;
+    for (const file of files) {
+      try {
+        await provider.writeFile(file.path, file.content);
+        succeeded++;
+      } catch {
+        failed++;
+      }
+    }
+    await get().loadFileTree();
+    return { succeeded, failed };
   },
 }));
