@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useAIStore } from "@/store/ai";
+import { useEmbeddingStore } from "@/store/embedding";
 import { streamChat, type ChatMessage } from "@/lib/ai/client";
 import { SYSTEM_PROMPTS } from "@/lib/ai/prompts";
 
@@ -12,10 +13,12 @@ interface Message {
 
 export function AIChatPanel() {
   const { config, chatOpen, setChatOpen } = useAIStore();
+  const { semanticSearch, embeddings } = useEmbeddingStore();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [streaming, setStreaming] = useState("");
+  const [usingContext, setUsingContext] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -50,9 +53,24 @@ export function AIChatPanel() {
     setInput("");
     setLoading(true);
     setStreaming("");
+    setUsingContext(false);
+
+    // RAG: retrieve relevant document context
+    let systemContent: string = SYSTEM_PROMPTS.chat;
+    if (embeddings.size > 0) {
+      const results = await semanticSearch(text, 3);
+      const relevant = results.filter((r) => r.score > 0.35);
+      if (relevant.length > 0) {
+        const ctx = relevant
+          .map((r) => `### ${r.title}\n${r.snippet}`)
+          .join("\n\n");
+        systemContent = `${SYSTEM_PROMPTS.chat}\n\n---\nRelevant context from your knowledge base:\n\n${ctx}`;
+        setUsingContext(true);
+      }
+    }
 
     const chatMessages: ChatMessage[] = [
-      { role: "system", content: SYSTEM_PROMPTS.chat },
+      { role: "system", content: systemContent },
       ...newMessages.map((m) => ({ role: m.role as "user" | "assistant", content: m.content })),
     ];
 
@@ -73,9 +91,10 @@ export function AIChatPanel() {
     } finally {
       setLoading(false);
       setStreaming("");
+      setUsingContext(false);
       abortRef.current = null;
     }
-  }, [input, loading, messages, config]);
+  }, [input, loading, messages, config, semanticSearch, embeddings]);
 
   const insertToDoc = useCallback((content: string) => {
     // Extract code blocks or use full content
@@ -147,6 +166,9 @@ export function AIChatPanel() {
               <div className="whitespace-pre-wrap">{streaming}</div>
             </div>
           </div>
+        )}
+        {loading && !streaming && embeddings.size > 0 && (
+          <div className="mb-1 text-xs text-[var(--neutral-400)]">Searching knowledge base...</div>
         )}
         <div ref={bottomRef} />
       </div>

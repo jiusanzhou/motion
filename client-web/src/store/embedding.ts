@@ -13,11 +13,13 @@ export interface SimilarDoc {
   path: string;
   title: string;
   score: number;
+  snippet: string;
 }
 
 interface EmbeddingEntry {
   vec: Float32Array;
   title: string;
+  snippet: string;
 }
 
 interface EmbeddingState {
@@ -52,9 +54,10 @@ export const useEmbeddingStore = create<EmbeddingState>((set, get) => {
       set({ isEmbedding: true });
       try {
         const vec = await embed(text);
+        const snippet = text.slice(0, 500);
         set((s) => {
           const next = new Map(s.embeddings);
-          next.set(path, { vec, title });
+          next.set(path, { vec, title, snippet });
           return { embeddings: next, isEmbedding: false };
         });
       } catch {
@@ -73,6 +76,7 @@ export const useEmbeddingStore = create<EmbeddingState>((set, get) => {
           path: p,
           title: e.title,
           score: cosineSimilarity(entry.vec, e.vec),
+          snippet: e.snippet,
         });
       }
       return results.sort((a, b) => b.score - a.score).slice(0, k);
@@ -91,6 +95,7 @@ export const useEmbeddingStore = create<EmbeddingState>((set, get) => {
             path: p,
             title: e.title,
             score: cosineSimilarity(queryVec, e.vec),
+            snippet: e.snippet,
           });
         }
         set({ isEmbedding: false });
