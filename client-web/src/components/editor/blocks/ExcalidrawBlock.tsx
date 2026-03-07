@@ -22,10 +22,79 @@ const ExcalidrawComponent = dynamic(
   }
 );
 
-const exportToSvgDynamic = () =>
-  import("@excalidraw/excalidraw").then((mod) => mod.exportToSvg);
+function ExcalidrawPreview({ data }: { data: string }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [error, setError] = useState(false);
 
-// Global state to track which block is being edited (only one at a time)
+  useEffect(() => {
+    if (!data || !containerRef.current) return;
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const parsed = JSON.parse(data);
+        if (!parsed.elements?.length) {
+          setError(true);
+          return;
+        }
+
+        const { exportToSvg } = await import("@excalidraw/excalidraw");
+        const svg = await exportToSvg({
+          elements: parsed.elements,
+          appState: {
+            exportWithDarkMode: false,
+            viewBackgroundColor: "#ffffff",
+            ...parsed.appState,
+          },
+          files: parsed.files || null,
+        });
+
+        if (cancelled) return;
+
+        svg.removeAttribute("width");
+        svg.removeAttribute("height");
+        svg.style.width = "100%";
+        svg.style.height = "auto";
+        svg.style.maxHeight = "220px";
+        svg.style.display = "block";
+
+        if (containerRef.current) {
+          containerRef.current.innerHTML = "";
+          containerRef.current.appendChild(svg);
+        }
+      } catch {
+        if (!cancelled) setError(true);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [data]);
+
+  if (error) {
+    return (
+      <div style={{ padding: 16, textAlign: "center", color: "var(--neutral-400)", fontSize: 13 }}>
+        🎨 Drawing (click to edit)
+      </div>
+    );
+  }
+
+  return (
+    <div
+      ref={containerRef}
+      style={{
+        padding: "8px",
+        backgroundColor: "white",
+        minHeight: 40,
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        overflow: "hidden",
+        maxHeight: "220px",
+      }}
+    />
+  );
+}
+
 let activeExcalidrawBlockId: string | null = null;
 const listeners = new Set<() => void>();
 function setActiveBlock(id: string | null) {
@@ -35,10 +104,9 @@ function setActiveBlock(id: string | null) {
 function useActiveBlock(blockId: string) {
   const [isOpen, setIsOpen] = useState(false);
   useEffect(() => {
-    const listener = () => {
-      setIsOpen(activeExcalidrawBlockId === blockId);
-    };
+    const listener = () => setIsOpen(activeExcalidrawBlockId === blockId);
     listeners.add(listener);
+    listener();
     return () => { listeners.delete(listener); };
   }, [blockId]);
   return isOpen;
@@ -50,25 +118,20 @@ function ExcalidrawOverlay({
   onClose,
 }: {
   data: string;
-  onSave: (json: string, preview: string) => void;
+  onSave: (json: string) => void;
   onClose: () => void;
 }) {
   const [excalidrawAPI, setExcalidrawAPI] = useState<any>(null);
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = "";
-    };
+    return () => { document.body.style.overflow = ""; };
   }, []);
 
   const initialData = data
     ? (() => {
-        try {
-          return JSON.parse(data);
-        } catch {
-          return undefined;
-        }
+        try { return JSON.parse(data); }
+        catch { return undefined; }
       })()
     : undefined;
 
@@ -84,26 +147,7 @@ function ExcalidrawOverlay({
       files,
     });
 
-    let preview = "";
-    try {
-      const exportToSvg = await exportToSvgDynamic();
-      const svg = await exportToSvg({
-        elements,
-        appState: { ...appState, exportWithDarkMode: false },
-        files,
-      });
-      svg.removeAttribute("width");
-      svg.removeAttribute("height");
-      svg.setAttribute(
-        "viewBox",
-        svg.getAttribute("viewBox") || "0 0 100 100"
-      );
-      preview = new XMLSerializer().serializeToString(svg);
-    } catch {
-      // preview generation failed
-    }
-
-    onSave(json, preview);
+    onSave(json);
   }, [excalidrawAPI, onSave]);
 
   return createPortal(
@@ -174,17 +218,12 @@ function ExcalidrawOverlay({
   );
 }
 
-function sanitizeSvg(raw: string): string {
-  return raw.replace(/<script[\s\S]*?<\/script>/gi, "");
-}
-
 export const ExcalidrawBlock = createReactBlockSpec(
   {
     type: "excalidraw" as const,
     propSchema: {
       ...defaultProps,
       data: { default: "" },
-      preview: { default: "" },
     },
     content: "none" as const,
   },
@@ -193,7 +232,6 @@ export const ExcalidrawBlock = createReactBlockSpec(
       const blockId = props.block.id;
       const isOpen = useActiveBlock(blockId);
       const data = props.block.props.data;
-      const preview = props.block.props.preview;
 
       const handleOpen = useCallback(() => {
         setActiveBlock(blockId);
@@ -204,16 +242,15 @@ export const ExcalidrawBlock = createReactBlockSpec(
       }, []);
 
       const handleSave = useCallback(
-        (json: string, svgPreview: string) => {
+        (json: string) => {
           props.editor.updateBlock(props.block, {
-            props: { data: json, preview: svgPreview },
+            props: { data: json },
           });
           setActiveBlock(null);
         },
         [props.editor, props.block]
       );
 
-      // Empty state
       if (!data) {
         return (
           <div>
@@ -229,28 +266,17 @@ export const ExcalidrawBlock = createReactBlockSpec(
               }}
             >
               <div style={{ fontSize: "20px", marginBottom: "4px" }}>🎨</div>
-              <div
-                style={{
-                  fontSize: "13px",
-                  fontWeight: 500,
-                  color: "var(--neutral-500, #6b7280)",
-                }}
-              >
+              <div style={{ fontSize: "13px", fontWeight: 500, color: "var(--neutral-500, #6b7280)" }}>
                 Click to create a drawing
               </div>
             </div>
             {isOpen && (
-              <ExcalidrawOverlay
-                data={data}
-                onSave={handleSave}
-                onClose={handleClose}
-              />
+              <ExcalidrawOverlay data={data} onSave={handleSave} onClose={handleClose} />
             )}
           </div>
         );
       }
 
-      // Has drawing
       return (
         <div>
           <div
@@ -262,41 +288,7 @@ export const ExcalidrawBlock = createReactBlockSpec(
               cursor: "pointer",
             }}
           >
-            {preview ? (
-              <div
-                style={{
-                  padding: "12px",
-                  backgroundColor: "white",
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  maxHeight: "200px",
-                  overflow: "hidden",
-                }}
-              >
-                <div
-                  style={{
-                    maxWidth: "100%",
-                    maxHeight: "180px",
-                    overflow: "hidden",
-                  }}
-                  dangerouslySetInnerHTML={{
-                    __html: sanitizeSvg(preview),
-                  }}
-                />
-              </div>
-            ) : (
-              <div
-                style={{
-                  padding: "20px",
-                  textAlign: "center",
-                  color: "var(--neutral-400)",
-                  fontSize: "13px",
-                }}
-              >
-                🎨 Drawing (click to edit)
-              </div>
-            )}
+            <ExcalidrawPreview data={data} />
             <div
               style={{
                 padding: "4px 10px",
@@ -311,11 +303,7 @@ export const ExcalidrawBlock = createReactBlockSpec(
             </div>
           </div>
           {isOpen && (
-            <ExcalidrawOverlay
-              data={data}
-              onSave={handleSave}
-              onClose={handleClose}
-            />
+            <ExcalidrawOverlay data={data} onSave={handleSave} onClose={handleClose} />
           )}
         </div>
       );
