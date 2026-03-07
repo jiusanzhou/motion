@@ -6,13 +6,15 @@
 
 <div align="center">
 
-<img src="../client-web/public/logo.svg" alt="Motion" width="240" />
+<img src="../client-web/public/logo.svg" alt="Motion" width="200" />
 
+<br />
 <br />
 
 **Agent 友好的知识库编辑器。纯前端，数据完全由你掌控。**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](../LICENSE)
+[![Stars](https://img.shields.io/github/stars/jiusanzhou/motion?style=flat&color=yellow)](https://github.com/jiusanzhou/motion/stargazers)
 [![Next.js](https://img.shields.io/badge/Next.js-16-black)](https://nextjs.org)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/jiusanzhou/motion/pulls)
 
@@ -22,23 +24,52 @@
 
 ## Motion 是什么？
 
-Motion 是一个**纯前端**的 Notion 风格知识库编辑器。数据不经过任何服务器，通过可插拔的存储后端持久化（首选 GitHub）。内置 MCP Server，AI Agent 可通过 WebSocket 直接读写你的知识库。
+Motion 是一个**纯前端**的 Notion 风格知识库编辑器，内置 AI Agent 接口。数据以普通 Markdown 存储在你的 GitHub 仓库中 — 无需后端，无需供应商锁定，数据不离开浏览器。
 
-<!-- 截图占位 -->
-<!-- ![Motion 截图](assets/screenshot.png) -->
+与云端工具相比，Motion 给你：
+- **完全的数据所有权** — 你的 GitHub 仓库就是你的数据库
+- **AI 原生架构** — 内置 MCP Server，任何 AI Agent 可通过 WebSocket 读写知识库
+- **零基础设施** — 一键部署到 Vercel，或本地运行
+
+## 截图预览
+
+> 以下截图展示主编辑器、AI Chat 面板、知识图谱和版本历史。
+
+| 编辑器 | AI Chat |
+|--------|---------|
+| ![Editor](assets/screenshot-editor.png) | ![AI Chat](assets/screenshot-ai-chat.png) |
+
+| 知识图谱 | 版本历史 |
+|----------|---------|
+| ![Graph](assets/screenshot-graph.png) | ![History](assets/screenshot-history.png) |
+
+<!-- 更新截图：在 1280×800 分辨率截图，保存到 docs/assets/ -->
+
+## 为什么选 Motion？
+
+| | Motion | Notion | Obsidian |
+|--|--------|--------|----------|
+| 数据所有权 | ✅ GitHub 仓库 | ❌ 云端 | ✅ 本地文件 |
+| AI Agent 接入 | ✅ MCP WebSocket | ❌ | ❌ |
+| 零后端 | ✅ | ❌ | ✅ |
+| 多人协作 | ✅ 基于 Git | ✅ | ❌ |
+| 自托管 | ✅ | ❌ | N/A |
+| 免费 | ✅ | Freemium | Freemium |
 
 ## 特性
 
-- 🧠 **Agent 友好** — 内置 MCP Server，AI Agent 通过 WebSocket 即可读写知识库
-- 🔒 **隐私优先** — Token 不离开浏览器，数据完全在你的掌控之下
-- 📝 **Block 编辑器** — Notion 风格的 BlockNote 编辑器，支持斜杠命令、拖拽排序、Markdown
-- 🔗 **双向链接** — `[[wiki-links]]` 语法 + 力导向知识图谱
-- 🏷️ **标签与元数据** — 结构化 Frontmatter、标签云、语义化组织
-- 🌗 **暗色模式** — 亮色 / 暗色 / 跟随系统，Cmd+K 命令面板
-- 📂 **GitHub 存储** — 通过 Octokit 直接读写 GitHub 仓库，仓库即数据库
-- 🕰️ **版本历史** — 完整的 commit 历史，支持预览和回滚
+- 🧠 **Agent 友好的 MCP Server** — AI Agent 通过 WebSocket 连接，可列出、读取、写入、搜索和遍历知识图谱
+- 🔒 **隐私优先** — OAuth Token 不离开浏览器；数据存储在你自己的 GitHub 仓库
+- 📝 **Block 编辑器** — Notion 风格 BlockNote 编辑器：斜杠命令、拖拽块、Markdown 快捷方式
+- 🔗 **双向链接** — `[[wiki-links]]` 语法 + 自动反向链接索引 + 力导向知识图谱
+- 🏷️ **标签与 Frontmatter** — 结构化 YAML 元数据、标签云、语义化组织
+- 🌗 **暗色模式** — 亮色 / 暗色 / 跟随系统，`Cmd+K` 命令面板
+- 📂 **GitHub 存储** — 通过 Octokit 直接读写 GitHub 仓库，commit 即版本历史
+- 🕰️ **版本历史** — 完整 commit 历史，支持差异预览和一键回滚
 - 🔍 **全文搜索** — 基于 Fuse.js 的模糊搜索
-- 📑 **多标签页编辑** — 标签页切换、未保存提示、拖拽排序、快捷键支持
+- 📑 **多标签页编辑** — 标签切换、未保存提示、拖拽排序、快捷键支持
+- 🗂️ **目录大纲** — 自动生成的 sticky TOC + 滚动位置高亮
+- 📱 **PWA + 移动端** — 可安装、离线可用、响应式布局
 
 ## 架构
 
@@ -114,17 +145,9 @@ pnpm dev
 
 打开 [http://localhost:3000](http://localhost:3000)，用 GitHub 登录，连接仓库，开始写作。
 
-## 存储后端
+### 部署到 Vercel
 
-Motion 采用**可插拔的 StorageProvider** 接口，目前支持：
-
-| 后端 | 状态 | 说明 |
-|------|------|------|
-| **GitHub** | ✅ 稳定 | 通过 Octokit 直接读写 GitHub 仓库中的 Markdown 文件 |
-| **本地 / IndexedDB** | ✅ 缓存 | 离线优先的缓存层，支持增量同步 |
-| **S3 / WebDAV** | 🗓️ 计划中 | 欢迎社区贡献 |
-
-你的 GitHub 仓库**就是**你的数据库 — 标准的 Markdown 文件 + YAML Frontmatter，目录结构随你组织。
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fjiusanzhou%2Fmotion&env=GITHUB_CLIENT_ID,GITHUB_CLIENT_SECRET,NEXTAUTH_SECRET,NEXTAUTH_URL)
 
 ## Agent / MCP 集成
 
@@ -142,6 +165,18 @@ AI Agent 可以：
 - **查询**知识图谱（反向链接、关联页面）
 
 浏览器变成了一个实时的知识 API，任何兼容 MCP 协议的 Agent 都可以直接连接。
+
+## 存储后端
+
+Motion 采用**可插拔的 StorageProvider** 接口，目前支持：
+
+| 后端 | 状态 | 说明 |
+|------|------|------|
+| **GitHub** | ✅ 稳定 | 通过 Octokit 直接读写 GitHub 仓库中的 Markdown 文件 |
+| **本地 / IndexedDB** | ✅ 缓存 | 离线优先的缓存层，支持增量同步 |
+| **S3 / WebDAV** | 🗓️ 计划中 | 欢迎社区贡献 |
+
+你的 GitHub 仓库**就是**你的数据库 — 标准的 Markdown 文件 + YAML Frontmatter，目录结构随你组织。
 
 ## 技术栈
 

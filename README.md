@@ -6,13 +6,15 @@
 
 <div align="center">
 
-<img src="client-web/public/logo.svg" alt="Motion" width="240" />
+<img src="client-web/public/logo.svg" alt="Motion" width="200" />
 
+<br />
 <br />
 
 **Agent-friendly knowledge base editor. Pure frontend. Your data, your control.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Stars](https://img.shields.io/github/stars/jiusanzhou/motion?style=flat&color=yellow)](https://github.com/jiusanzhou/motion/stargazers)
 [![Next.js](https://img.shields.io/badge/Next.js-16-black)](https://nextjs.org)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/jiusanzhou/motion/pulls)
 
@@ -22,23 +24,52 @@
 
 ## What is Motion?
 
-Motion is a **pure-frontend** Notion-style knowledge base editor. Data never touches a server — it's persisted through pluggable storage backends (GitHub first). AI agents can read and write your knowledge base directly via WebSocket using the built-in MCP Server.
+Motion is a **pure-frontend** Notion-style knowledge base editor with a built-in AI agent interface. Your data is stored in a GitHub repo as plain markdown — no backend, no vendor lock-in, no data leaving your browser.
 
-<!-- Screenshot placeholder -->
-<!-- ![Motion Screenshot](docs/assets/screenshot.png) -->
+Unlike cloud-based tools, Motion gives you:
+- **Full data ownership** — your GitHub repo is your database
+- **AI-native architecture** — a built-in MCP Server lets any AI agent read and write your knowledge base via WebSocket
+- **Zero infra** — deploy to Vercel in one click, or just run locally
+
+## Screenshots
+
+> Screenshots below show the main editor, AI Chat panel, knowledge graph, and version history.
+
+| Editor | AI Chat |
+|--------|---------|
+| ![Editor](docs/assets/screenshot-editor.png) | ![AI Chat](docs/assets/screenshot-ai-chat.png) |
+
+| Knowledge Graph | Version History |
+|-----------------|-----------------|
+| ![Graph](docs/assets/screenshot-graph.png) | ![History](docs/assets/screenshot-history.png) |
+
+<!-- To update screenshots: take them at 1280×800, save to docs/assets/ -->
+
+## Why Motion?
+
+| | Motion | Notion | Obsidian |
+|--|--------|--------|----------|
+| Data ownership | ✅ GitHub repo | ❌ Cloud | ✅ Local files |
+| AI agent access | ✅ MCP WebSocket | ❌ | ❌ |
+| Zero backend | ✅ | ❌ | ✅ |
+| Collaborative | ✅ via Git | ✅ | ❌ |
+| Self-hosted | ✅ | ❌ | N/A |
+| Free | ✅ | Freemium | Freemium |
 
 ## Features
 
-- 🧠 **Agent-Friendly** — Built-in MCP Server lets AI agents read/write your knowledge base via WebSocket
-- 🔒 **Privacy First** — Tokens never leave the browser; data stays entirely under your control
-- 📝 **Block Editor** — Notion-style BlockNote editor with slash commands, drag & drop, and markdown
-- 🔗 **Bidirectional Links** — `[[wiki-links]]` with a force-directed knowledge graph
-- 🏷️ **Tags & Metadata** — Structured frontmatter, tag cloud, and semantic organization
-- 🌗 **Dark Mode** — Light / Dark / System theme with Cmd+K command palette
-- 📂 **GitHub Storage** — Read/write directly to GitHub repos via Octokit — your repo is your database
-- 🕰️ **Version History** — Full commit history with preview and rollback
-- 🔍 **Full-Text Search** — Fuzzy search across files with Fuse.js
-- 📑 **Multi-Tab Editing** — Tabs with unsaved indicators, drag reorder, and keyboard shortcuts
+- 🧠 **Agent-Friendly MCP Server** — AI agents connect via WebSocket and can list, read, write, search, and traverse your knowledge graph
+- 🔒 **Privacy First** — OAuth tokens never leave the browser; data stored in your own GitHub repo
+- 📝 **Block Editor** — Notion-style BlockNote editor: slash commands, drag & drop blocks, markdown shortcuts
+- 🔗 **Bidirectional Links** — `[[wiki-links]]` with automatic backlink indexing and a force-directed knowledge graph
+- 🏷️ **Tags & Frontmatter** — Structured YAML frontmatter, tag cloud, and semantic organization
+- 🌗 **Dark Mode** — Light / Dark / System with `Cmd+K` command palette
+- 📂 **GitHub Storage** — Read/write to any GitHub repo via Octokit — commits are your version history
+- 🕰️ **Version History** — Full commit history with diff preview and one-click rollback
+- 🔍 **Full-Text Search** — Fuzzy search across all files with Fuse.js
+- 📑 **Multi-Tab Editing** — Tabs with unsaved indicators, drag-to-reorder, and keyboard shortcuts
+- 🗂️ **Table of Contents** — Auto-generated sticky TOC with scroll-position highlighting
+- 📱 **PWA + Mobile** — Installable, offline-capable, responsive layout
 
 ## Architecture
 
@@ -114,17 +145,9 @@ pnpm dev
 
 Open [http://localhost:3000](http://localhost:3000) — sign in with GitHub, connect a repo, and start writing.
 
-## Storage Backends
+### Deploy on Vercel
 
-Motion uses a **pluggable StorageProvider** interface. Currently supported:
-
-| Backend | Status | Description |
-|---------|--------|-------------|
-| **GitHub** | ✅ Stable | Read/write markdown files to any GitHub repo via Octokit |
-| **Local/IndexedDB** | ✅ Cache | Offline-first caching layer with incremental sync |
-| **S3 / WebDAV** | 🗓️ Planned | Community contributions welcome |
-
-Your GitHub repo **is** your database — standard markdown files with YAML frontmatter, organized however you like.
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fjiusanzhou%2Fmotion&env=GITHUB_CLIENT_ID,GITHUB_CLIENT_SECRET,NEXTAUTH_SECRET,NEXTAUTH_URL)
 
 ## Agent / MCP Integration
 
@@ -142,6 +165,18 @@ AI agents can:
 - **Query** the knowledge graph (backlinks, related pages)
 
 This turns your browser into a live knowledge API that any MCP-compatible agent can connect to.
+
+## Storage Backends
+
+Motion uses a **pluggable StorageProvider** interface. Currently supported:
+
+| Backend | Status | Description |
+|---------|--------|-------------|
+| **GitHub** | ✅ Stable | Read/write markdown files to any GitHub repo via Octokit |
+| **Local/IndexedDB** | ✅ Cache | Offline-first caching layer with incremental sync |
+| **S3 / WebDAV** | 🗓️ Planned | Community contributions welcome |
+
+Your GitHub repo **is** your database — standard markdown files with YAML frontmatter, organized however you like.
 
 ## Tech Stack
 
