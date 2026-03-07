@@ -123,7 +123,13 @@ export function AIChatPanel() {
   if (!chatOpen) return null;
 
   return (
-    <div className="fixed right-0 top-12 bottom-0 z-40 flex w-80 flex-col border-l border-[var(--neutral-200)] bg-[var(--background)] shadow-xl lg:w-96">
+    <>
+      {/* Mobile backdrop — tap to close */}
+      <div
+        className="fixed inset-0 z-30 bg-black/40 md:hidden"
+        onClick={() => setChatOpen(false)}
+      />
+    <div className="fixed right-0 top-12 bottom-0 z-40 flex w-full flex-col border-l border-[var(--neutral-200)] bg-[var(--background)] shadow-xl md:w-80 lg:w-96">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-[var(--neutral-200)] px-4 py-3">
         <span className="text-sm font-medium text-[var(--foreground)]">AI Chat</span>
@@ -136,7 +142,7 @@ export function AIChatPanel() {
           </button>
           <button
             onClick={() => setChatOpen(false)}
-            className="text-[var(--neutral-400)] hover:text-[var(--foreground)]"
+            className="text-[var(--neutral-400)] hover:text-[var(--foreground)] md:text-base text-xl leading-none"
           >
             ✕
           </button>
@@ -233,5 +239,6 @@ export function AIChatPanel() {
         )}
       </div>
     </div>
+    </>
   );
 }
