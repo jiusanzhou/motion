@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-type Slug = "notion-alternative" | "obsidian-alternative" | "logseq-alternative";
+type Slug = "notion-alternative" | "obsidian-alternative" | "logseq-alternative" | "outline-alternative" | "anytype-alternative";
 
 interface CompareRow {
   feature: string;
@@ -312,6 +312,74 @@ const pages: Record<Slug, PageData> = {
       { question: "How does motion sync notes without a Logseq-style git plugin?", answer: "motion stores all notes directly in a GitHub repository you specify. Sync is handled automatically via the GitHub API — no plugin or git client needed." },
     ],
     keywords: ["logseq alternative", "logseq web", "logseq online", "logseq browser", "logseq replacement", "logseq free alternative"],
+  },
+
+  "outline-alternative": {
+    slug: "outline-alternative",
+    seoTitle: "motion vs Outline — Lightweight Outline Alternative",
+    metaDescription:
+      "Looking for an Outline alternative? motion is a free, GitHub-backed knowledge base with no server to maintain. Open-source, Markdown-native, with built-in AI.",
+    h1: "The Outline Alternative Without the Server",
+    subheading: "No Docker. No PostgreSQL. Your notes in GitHub.",
+    intro:
+      "Outline is a beautiful team wiki — but it requires self-hosting a Node.js app, PostgreSQL database, and S3-compatible storage. That's a lot to maintain. motion takes a radically simpler approach: it runs entirely in the browser and stores everything in a GitHub repository you own. No server to provision, no database to back up, no infrastructure to maintain.",
+    competitor: "Outline",
+    rows: [
+      { feature: "Hosting", motion: "No hosting needed (browser app)", other: "Self-hosted Node.js + PostgreSQL" },
+      { feature: "Setup time", motion: "Zero (open URL)", other: "30–60 min Docker setup" },
+      { feature: "Data storage", motion: "GitHub repo you own", other: "PostgreSQL + S3 bucket" },
+      { feature: "Price", motion: "Free (MIT)", other: "Free self-hosted / paid cloud" },
+      { feature: "AI integration", motion: "✅ Built-in RAG + MCP", other: "⚠️ Limited" },
+      { feature: "Markdown files", motion: "✅ Standard .md files", other: "⚠️ Proprietary format" },
+      { feature: "Open source", motion: "✅ MIT", other: "✅ BSL license" },
+    ],
+    benefits: [
+      { title: "Zero infrastructure", description: "motion needs no server, no database, no S3. Just open the URL and start writing." },
+      { title: "Personal use friendly", description: "Outline is designed for teams. motion works great for individuals and small teams without the overhead." },
+      { title: "Your data, forever", description: "All notes are plain Markdown files in your GitHub repo — readable by any tool, forever." },
+      { title: "AI that works out of the box", description: "motion's built-in AI lets you ask questions across all your notes without plugin setup." },
+    ],
+    faqs: [
+      { question: "Is motion a good Outline replacement for personal use?", answer: "Yes. motion gives you a clean wiki editor, markdown support, and AI without any server setup — perfect for personal knowledge management." },
+      { question: "Does motion support team collaboration like Outline?", answer: "motion is primarily designed for personal or small team use, with GitHub as the collaboration layer. For large teams needing real-time collaboration, Outline may be more suitable." },
+      { question: "How does motion store data compared to Outline?", answer: "Outline stores data in PostgreSQL + S3. motion stores everything as Markdown files in a GitHub repository you specify — no database required." },
+      { question: "Is motion free like Outline's self-hosted version?", answer: "Yes. motion is MIT-licensed and completely free. There are no paid tiers, no cloud hosting costs, and no usage limits." },
+    ],
+    keywords: ["outline alternative", "outline wiki alternative", "self-hosted wiki alternative", "outline app alternative", "lightweight wiki"],
+  },
+
+  "anytype-alternative": {
+    slug: "anytype-alternative",
+    seoTitle: "motion vs Anytype — Simple Anytype Alternative",
+    metaDescription:
+      "Looking for an Anytype alternative? motion stores your notes in GitHub — no proprietary sync protocol, no desktop app required. Free, open-source, browser-based.",
+    h1: "The Anytype Alternative That Uses GitHub Instead",
+    subheading: "Block editor, AI built-in, no proprietary sync.",
+    intro:
+      "Anytype is a powerful local-first tool — but it relies on its own proprietary sync protocol and requires a desktop app. If you want a more portable, browser-accessible alternative with AI built in, motion takes a different path: your notes are plain Markdown files stored in a GitHub repo, accessible from any browser, with no proprietary format to worry about.",
+    competitor: "Anytype",
+    rows: [
+      { feature: "Platform", motion: "Browser (any device)", other: "Desktop app (Electron)" },
+      { feature: "Sync", motion: "GitHub (standard git)", other: "Anytype proprietary p2p" },
+      { feature: "File format", motion: "Standard Markdown", other: "Proprietary Anytype objects" },
+      { feature: "AI integration", motion: "✅ Built-in RAG + MCP", other: "⚠️ Limited" },
+      { feature: "Web access", motion: "✅ Any browser", other: "❌ Desktop only" },
+      { feature: "Open source", motion: "✅ MIT", other: "⚠️ Source-available" },
+      { feature: "Price", motion: "Free forever", other: "Free (limited storage)" },
+    ],
+    benefits: [
+      { title: "No app to install", description: "motion runs in any browser. No Electron app, no OS restrictions, no update prompts." },
+      { title: "Standard Markdown", description: "Your Anytype objects become portable Markdown files you can open in any editor." },
+      { title: "Built-in AI", description: "Ask questions across your notes with motion's RAG AI. No plugin installation or API key wrangling in settings." },
+      { title: "Open git history", description: "Every change is a git commit. Full version history, branching, and rollback — using tools you already know." },
+    ],
+    faqs: [
+      { question: "How is motion different from Anytype?", answer: "motion uses standard Markdown stored in GitHub, works in any browser, and has built-in AI. Anytype uses a proprietary sync protocol and requires a desktop app." },
+      { question: "Can I migrate from Anytype to motion?", answer: "You can export your Anytype notes as Markdown and import them into motion. The block editor will render your content immediately." },
+      { question: "Does motion work offline like Anytype?", answer: "motion works as a PWA and can cache content for offline reading. Full offline write sync requires a git client, whereas Anytype handles offline natively." },
+      { question: "Is motion free like Anytype?", answer: "Yes. motion is completely free and MIT open-source. There are no storage limits or paid tiers." },
+    ],
+    keywords: ["anytype alternative", "anytype web", "anytype online", "anytype browser", "local-first notes alternative"],
   },
 };
 
@@ -671,6 +739,16 @@ export default async function ComparePage({
           {slug !== "logseq-alternative" && (
             <Link href="/compare/logseq-alternative" className="transition-colors hover:text-[var(--foreground)]">
               motion vs Logseq
+            </Link>
+          )}
+          {slug !== "outline-alternative" && (
+            <Link href="/compare/outline-alternative" className="transition-colors hover:text-[var(--foreground)]">
+              motion vs Outline
+            </Link>
+          )}
+          {slug !== "anytype-alternative" && (
+            <Link href="/compare/anytype-alternative" className="transition-colors hover:text-[var(--foreground)]">
+              motion vs Anytype
             </Link>
           )}
           <span aria-hidden="true">·</span>
