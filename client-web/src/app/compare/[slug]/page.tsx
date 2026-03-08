@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-type Slug = "notion-alternative" | "obsidian-alternative";
+type Slug = "notion-alternative" | "obsidian-alternative" | "logseq-alternative";
 
 interface CompareRow {
   feature: string;
@@ -277,6 +277,41 @@ const pages: Record<Slug, PageData> = {
       },
     ],
     keywords: ["obsidian web", "obsidian alternative online", "obsidian browser", "obsidian alternative free"],
+  },
+
+  "logseq-alternative": {
+    slug: "logseq-alternative",
+    seoTitle: "motion vs Logseq — Web-Based Logseq Alternative",
+    metaDescription:
+      "Looking for a Logseq alternative that works in the browser? motion is a free, open-source knowledge base with GitHub storage, wiki-links, and built-in AI. No Electron, no sync issues.",
+    h1: "The Logseq Alternative Built for the Web",
+    subheading: "Block editor, wiki-links, GitHub-backed. No Electron app required.",
+    intro:
+      "Logseq is a powerful outliner-style PKM tool — but it's primarily a desktop Electron app with complex sync setup. motion takes the browser-first approach: everything runs in your browser tab, your notes live in a GitHub repo you own, and there's no app to install or sync plugin to configure.",
+    competitor: "Logseq",
+    rows: [
+      { feature: "Platform", motion: "Browser-based (PWA)", other: "Electron desktop app", note: "motion works on any device with a browser" },
+      { feature: "Sync", motion: "GitHub repo (built-in)", other: "Git plugin required", note: "motion sync is zero-config" },
+      { feature: "Data format", motion: "Standard Markdown", other: "Custom EDN/Markdown", note: "motion files portable to any editor" },
+      { feature: "Wiki-links", motion: "✅ [[page links]] + graph", other: "✅ Core feature", note: "" },
+      { feature: "AI integration", motion: "✅ Built-in RAG + MCP", other: "⚠️ Plugin only", note: "" },
+      { feature: "Price", motion: "Free (MIT)", other: "Free (source-available)", note: "" },
+      { feature: "Open source", motion: "✅ MIT", other: "⚠️ Source-available", note: "" },
+      { feature: "Mobile support", motion: "✅ Responsive PWA", other: "⚠️ Limited", note: "" },
+    ],
+    benefits: [
+      { title: "No app to install", description: "motion runs entirely in your browser. Open a tab, start writing. Works on any device — laptop, tablet, phone." },
+      { title: "Zero-config sync", description: "Your notes sync to a GitHub repo automatically. No sync plugin, no iCloud setup, no Dropbox." },
+      { title: "Built-in AI", description: "Ask questions across all your notes with motion's built-in RAG. No plugin installation required." },
+      { title: "Standard Markdown", description: "motion uses plain .md files. Your notes are readable by any editor, forever." },
+    ],
+    faqs: [
+      { question: "Can motion replace Logseq for daily note-taking?", answer: "Yes. motion supports block editing, wiki-links [[like this]], tags, and a knowledge graph — the core workflows Logseq users rely on." },
+      { question: "Does motion support bidirectional links like Logseq?", answer: "Yes, motion supports [[wiki-links]] with backlinks and a visual graph view of your knowledge base." },
+      { question: "Is motion free like Logseq?", answer: "Yes, motion is completely free and MIT-licensed open source. There are no paid tiers or subscriptions." },
+      { question: "How does motion sync notes without a Logseq-style git plugin?", answer: "motion stores all notes directly in a GitHub repository you specify. Sync is handled automatically via the GitHub API — no plugin or git client needed." },
+    ],
+    keywords: ["logseq alternative", "logseq web", "logseq online", "logseq browser", "logseq replacement", "logseq free alternative"],
   },
 };
 
@@ -623,13 +658,19 @@ export default async function ComparePage({
           <span aria-hidden="true">·</span>
           <Link href="/welcome" className="transition-colors hover:text-[var(--foreground)]">Features</Link>
           <span aria-hidden="true">·</span>
-          {slug === "notion-alternative" ? (
+          {slug !== "notion-alternative" && (
+            <Link href="/compare/notion-alternative" className="transition-colors hover:text-[var(--foreground)]">
+              motion vs Notion
+            </Link>
+          )}
+          {slug !== "obsidian-alternative" && (
             <Link href="/compare/obsidian-alternative" className="transition-colors hover:text-[var(--foreground)]">
               motion vs Obsidian
             </Link>
-          ) : (
-            <Link href="/compare/notion-alternative" className="transition-colors hover:text-[var(--foreground)]">
-              motion vs Notion
+          )}
+          {slug !== "logseq-alternative" && (
+            <Link href="/compare/logseq-alternative" className="transition-colors hover:text-[var(--foreground)]">
+              motion vs Logseq
             </Link>
           )}
           <span aria-hidden="true">·</span>
