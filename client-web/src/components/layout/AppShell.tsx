@@ -58,8 +58,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <Header />
         <TabBar />
         <main id="motion-scroll-container" className="relative flex-1 overflow-y-auto">
-          <div className="flex items-start">
-            <div className="flex-1 min-w-0">{children}</div>
+          <div className="flex items-start min-h-full">
+            <div className="flex-1 min-w-0 h-full">{children}</div>
             <TableOfContents />
           </div>
         </main>
