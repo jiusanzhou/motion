@@ -18,6 +18,8 @@ import { trackEvent } from "@/lib/analytics";
 const REPO_CONFIG_KEY = "motion:repo-config";
 const REPOS_KEY = "motion:repos";
 const EDITOR_WIDTH_KEY = "motion:editor-width";
+const OPEN_TABS_KEY = "motion:open-tabs";
+const ACTIVE_TAB_KEY = "motion:active-tab";
 
 export type EditorWidth = "compact" | "standard" | "wide" | "full";
 
@@ -57,6 +59,37 @@ function saveEditorWidth(w: EditorWidth) {
   localStorage.setItem(EDITOR_WIDTH_KEY, w);
 }
 
+function loadTabs(): { tabs: Array<{ path: string; title: string }>; activeTab: string | null } {
+  if (typeof window === "undefined") return { tabs: [], activeTab: null };
+  try {
+    const rawTabs = localStorage.getItem(OPEN_TABS_KEY);
+    const tabs = rawTabs ? JSON.parse(rawTabs) : [];
+    const activeTab = localStorage.getItem(ACTIVE_TAB_KEY);
+    return { tabs, activeTab };
+  } catch {
+    return { tabs: [], activeTab: null };
+  }
+}
+
+function saveTabs(tabs: Tab[], activeTabPath: string | null) {
+  try {
+    const serialized = tabs.map((t) => ({ path: t.path, title: t.title }));
+    localStorage.setItem(OPEN_TABS_KEY, JSON.stringify(serialized));
+    if (activeTabPath) {
+      localStorage.setItem(ACTIVE_TAB_KEY, activeTabPath);
+    } else {
+      localStorage.removeItem(ACTIVE_TAB_KEY);
+    }
+  } catch {
+    // Storage full or unavailable
+  }
+}
+
+function clearSavedTabs() {
+  localStorage.removeItem(OPEN_TABS_KEY);
+  localStorage.removeItem(ACTIVE_TAB_KEY);
+}
+
 function loadSavedRepos(): RepoConfig[] {
   if (typeof window === "undefined") return [];
   try {
@@ -90,6 +123,8 @@ interface MotionState {
   tabs: Tab[];
   viewMode: ViewMode;
   cacheInfo: CacheInfo | null;
+  isOnline: boolean;
+  pendingWriteCount: number;
 
   setProvider: (provider: StorageProvider | null) => void;
   setFileTree: (tree: TreeNode[]) => void;
@@ -129,6 +164,10 @@ interface MotionState {
   clearCache: () => Promise<void>;
   refreshCacheInfo: () => Promise<void>;
   checkForUpdates: () => Promise<void>;
+
+  setIsOnline: (online: boolean) => void;
+  syncPending: () => Promise<void>;
+  refreshPendingCount: () => Promise<void>;
 }
 
 export const useMotionStore = create<MotionState>((set, get) => ({
@@ -147,6 +186,8 @@ export const useMotionStore = create<MotionState>((set, get) => ({
   tabs: [],
   viewMode: "edit",
   cacheInfo: null,
+  isOnline: typeof navigator !== "undefined" ? navigator.onLine : true,
+  pendingWriteCount: 0,
 
   setProvider: (provider) => set({ provider }),
   setFileTree: (fileTree) => set({ fileTree }),
@@ -196,12 +237,30 @@ export const useMotionStore = create<MotionState>((set, get) => ({
     });
     await get().loadFileTree();
     get().refreshCacheInfo();
+    get().refreshPendingCount();
+
+    // Restore previously open tabs
+    const { tabs: savedTabs, activeTab } = loadTabs();
+    if (savedTabs.length > 0) {
+      for (const tab of savedTabs) {
+        try {
+          await get().openFile(tab.path);
+        } catch {
+          // File may no longer exist — skip
+        }
+      }
+      // Switch to the previously active tab
+      if (activeTab && get().tabs.some((t) => t.path === activeTab)) {
+        await get().openFile(activeTab);
+      }
+    }
   },
 
   disconnectRepo: () => {
     const { provider } = get();
     if (provider) provider.disconnect();
     clearRepoConfig();
+    clearSavedTabs();
     set({
       provider: null,
       repoConfig: null,
@@ -210,6 +269,7 @@ export const useMotionStore = create<MotionState>((set, get) => ({
       lastSavedContent: null,
       dirty: false,
       tabs: [],
+      pendingWriteCount: 0,
     });
   },
 
@@ -270,6 +330,8 @@ export const useMotionStore = create<MotionState>((set, get) => ({
         dirty: false,
         tabs: newTabs,
       });
+
+      saveTabs(newTabs, doc.path);
 
       // Index opened file content for search
       useSearchStore.getState().addDocument({
@@ -340,6 +402,7 @@ export const useMotionStore = create<MotionState>((set, get) => ({
         tabs: newTabs,
       });
       trackEvent("document_save");
+      get().refreshPendingCount();
       setTimeout(() => {
         if (get().saveStatus === "saved") {
           set({ saveStatus: "idle" });
@@ -505,7 +568,10 @@ export const useMotionStore = create<MotionState>((set, get) => ({
         get().openFile(nextTab.path);
       } else {
         set({ currentDoc: null, lastSavedContent: null, dirty: false });
+        saveTabs(newTabs, null);
       }
+    } else {
+      saveTabs(newTabs, currentDoc?.path ?? null);
     }
   },
 
@@ -569,5 +635,48 @@ export const useMotionStore = create<MotionState>((set, get) => ({
     }
     await get().loadFileTree();
     return { succeeded, failed };
+  },
+
+  setIsOnline: (online) => set({ isOnline: online }),
+
+  syncPending: async () => {
+    const { provider } = get();
+    if (!provider || !("syncPendingWrites" in provider)) return;
+    try {
+      const result = await (
+        provider as CachedGitHubStorageProvider
+      ).syncPendingWrites();
+      if (result.synced > 0) {
+        useToastStore
+          .getState()
+          .addToast(
+            `Synced ${result.synced} offline change${result.synced === 1 ? "" : "s"}`,
+            "success"
+          );
+      }
+      if (result.conflicts > 0) {
+        useToastStore
+          .getState()
+          .addToast(
+            `${result.conflicts} conflict${result.conflicts === 1 ? "" : "s"} — file changed remotely`,
+            "error"
+          );
+      }
+    } catch {
+      // Sync failed — will retry later
+    }
+    await get().refreshPendingCount();
+  },
+
+  refreshPendingCount: async () => {
+    const { provider } = get();
+    if (!provider || !("getPendingCount" in provider)) {
+      set({ pendingWriteCount: 0 });
+      return;
+    }
+    const count = await (
+      provider as CachedGitHubStorageProvider
+    ).getPendingCount();
+    set({ pendingWriteCount: count });
   },
 }));

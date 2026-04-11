@@ -51,6 +51,29 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     useSearchStore.getState().buildIndex(docs);
   }, [provider, fileTree]);
 
+  // Online / offline detection + auto-sync
+  useEffect(() => {
+    const store = useMotionStore.getState;
+
+    function handleOnline() {
+      store().setIsOnline(true);
+      // Auto-sync pending writes when coming back online
+      store().syncPending();
+    }
+
+    function handleOffline() {
+      store().setIsOnline(false);
+    }
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
+
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-[var(--background)]">
       <Sidebar />

@@ -1,9 +1,10 @@
 import type { MotionDocument, TreeNode } from "@/types";
 
 const DB_NAME = "motion-cache";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const FILES_STORE = "files";
 const TREES_STORE = "trees";
+const PENDING_WRITES_STORE = "pending-writes";
 
 const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 
@@ -22,6 +23,14 @@ export interface CachedTree {
   tree: TreeNode[];
   treeSha: string;
   cachedAt: number;
+}
+
+export interface PendingWrite {
+  key: string; // repoKey/path
+  path: string;
+  content: string;
+  sha?: string;
+  queuedAt: number;
 }
 
 export interface CacheInfo {
@@ -59,6 +68,9 @@ function openDB(): Promise<IDBDatabase | null> {
         }
         if (!db.objectStoreNames.contains(TREES_STORE)) {
           db.createObjectStore(TREES_STORE, { keyPath: "repoKey" });
+        }
+        if (!db.objectStoreNames.contains(PENDING_WRITES_STORE)) {
+          db.createObjectStore(PENDING_WRITES_STORE, { keyPath: "key" });
         }
       };
 
@@ -226,6 +238,52 @@ export async function getCacheInfo(repoKey: string): Promise<CacheInfo> {
   }
 
   return { fileCount, treeCount };
+}
+
+// Pending writes operations
+export async function addPendingWrite(
+  repoKey: string,
+  path: string,
+  content: string,
+  sha?: string
+): Promise<void> {
+  const store = await tx(PENDING_WRITES_STORE, "readwrite");
+  if (!store) return;
+  const entry: PendingWrite = {
+    key: `${repoKey}/${path}`,
+    path,
+    content,
+    sha,
+    queuedAt: Date.now(),
+  };
+  await idbRequest(store.put(entry));
+}
+
+export async function getPendingWrites(
+  repoKey: string
+): Promise<PendingWrite[]> {
+  const store = await tx(PENDING_WRITES_STORE, "readonly");
+  if (!store) return [];
+  const all = await idbRequest<PendingWrite[]>(store.getAll());
+  const prefix = `${repoKey}/`;
+  return all.filter((w) => w.key.startsWith(prefix));
+}
+
+export async function removePendingWrite(key: string): Promise<void> {
+  const store = await tx(PENDING_WRITES_STORE, "readwrite");
+  if (!store) return;
+  await idbRequest(store.delete(key));
+}
+
+export async function getPendingWriteCount(
+  repoKey: string
+): Promise<number> {
+  const store = await tx(PENDING_WRITES_STORE, "readonly");
+  if (!store) return 0;
+  const allKeys = await idbRequest<IDBValidKey[]>(store.getAllKeys());
+  const prefix = `${repoKey}/`;
+  return allKeys.filter((k) => typeof k === "string" && k.startsWith(prefix))
+    .length;
 }
 
 export { makeRepoKey };

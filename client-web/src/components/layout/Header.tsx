@@ -27,6 +27,9 @@ import {
   Braces,
   AlignLeft,
   Printer,
+  WifiOff,
+  CloudOff,
+  RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
@@ -64,6 +67,9 @@ export function Header() {
     setViewMode,
     sidebarOpen,
     toggleSidebar,
+    isOnline,
+    pendingWriteCount,
+    syncPending,
   } = useMotionStore();
   const { theme, setTheme } = useThemeStore();
 
@@ -102,6 +108,28 @@ export function Header() {
         )}
         {!currentDoc && (
           <span className="text-[var(--neutral-400)]">No file selected</span>
+        )}
+
+        {/* Offline / pending sync indicator */}
+        {!isOnline && (
+          <span className="ml-2 flex shrink-0 items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+            <WifiOff className="h-3 w-3" />
+            Offline
+          </span>
+        )}
+        {pendingWriteCount > 0 && (
+          <button
+            onClick={() => syncPending()}
+            className="ml-2 flex shrink-0 items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs text-blue-700 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50"
+            title="Click to sync pending changes"
+          >
+            {isOnline ? (
+              <RefreshCw className="h-3 w-3" />
+            ) : (
+              <CloudOff className="h-3 w-3" />
+            )}
+            {pendingWriteCount} pending
+          </button>
         )}
       </div>
       <div className="flex shrink-0 items-center gap-1">

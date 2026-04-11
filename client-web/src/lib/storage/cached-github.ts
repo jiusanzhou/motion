@@ -10,6 +10,10 @@ import {
   clearAll,
   getCacheInfo,
   makeRepoKey,
+  addPendingWrite,
+  getPendingWrites,
+  removePendingWrite,
+  getPendingWriteCount,
   type CacheInfo,
 } from "@/lib/cache";
 import type {
@@ -155,20 +159,35 @@ export class CachedGitHubStorageProvider implements StorageProvider {
     content: string,
     sha?: string
   ): Promise<MotionDocument> {
-    const doc = await this.inner.writeFile(path, content, sha);
-    await setFile(this.repoKey, path, doc);
-
-    // Refresh tree cache
     try {
-      const tree = await this.inner.listFiles();
-      const branchSha = await this.getBranchSha();
-      this._lastTreeSha = branchSha;
-      await setTree(this.repoKey, tree, branchSha);
-    } catch {
-      // Best-effort tree refresh
-    }
+      const doc = await this.inner.writeFile(path, content, sha);
+      await setFile(this.repoKey, path, doc);
 
-    return doc;
+      // Refresh tree cache
+      try {
+        const tree = await this.inner.listFiles();
+        const branchSha = await this.getBranchSha();
+        this._lastTreeSha = branchSha;
+        await setTree(this.repoKey, tree, branchSha);
+      } catch {
+        // Best-effort tree refresh
+      }
+
+      return doc;
+    } catch (err) {
+      if (isNetworkError(err)) {
+        // Offline: queue write and update local cache
+        await addPendingWrite(this.repoKey, path, content, sha);
+        const { parseDocument } = await import("@/lib/markdown");
+        const doc: MotionDocument = {
+          ...parseDocument(path, content),
+          sha: sha, // keep old sha; will be updated on sync
+        };
+        await setFile(this.repoKey, path, doc);
+        return doc;
+      }
+      throw err;
+    }
   }
 
   async deleteFile(path: string, sha?: string): Promise<void> {
@@ -278,6 +297,78 @@ export class CachedGitHubStorageProvider implements StorageProvider {
   get lastTreeSha(): string | null {
     return this._lastTreeSha;
   }
+
+  /** Sync all pending offline writes to GitHub */
+  async syncPendingWrites(): Promise<{
+    synced: number;
+    conflicts: number;
+    failed: number;
+  }> {
+    const pending = await getPendingWrites(this.repoKey);
+    let synced = 0;
+    let conflicts = 0;
+    let failed = 0;
+
+    for (const write of pending) {
+      try {
+        // Re-read current sha from cache (may have been updated)
+        const cached = await getFile(this.repoKey, write.path);
+        const currentSha = cached?.sha ?? write.sha;
+        const doc = await this.inner.writeFile(
+          write.path,
+          write.content,
+          currentSha
+        );
+        await setFile(this.repoKey, write.path, doc);
+        await removePendingWrite(write.key);
+        synced++;
+      } catch (err) {
+        const is409 =
+          err instanceof Error &&
+          (err.message.includes("409") || err.message.includes("Conflict"));
+        if (is409) {
+          conflicts++;
+          // Leave in queue — user must resolve
+        } else if (isNetworkError(err)) {
+          failed++;
+          // Still offline — keep in queue
+        } else {
+          failed++;
+        }
+      }
+    }
+
+    // Refresh tree cache if anything synced
+    if (synced > 0) {
+      try {
+        const tree = await this.inner.listFiles();
+        const branchSha = await this.getBranchSha();
+        this._lastTreeSha = branchSha;
+        await setTree(this.repoKey, tree, branchSha);
+      } catch {
+        // Best-effort
+      }
+    }
+
+    return { synced, conflicts, failed };
+  }
+
+  /** Get count of pending offline writes */
+  async getPendingCount(): Promise<number> {
+    return getPendingWriteCount(this.repoKey);
+  }
+}
+
+function isNetworkError(err: unknown): boolean {
+  if (!(err instanceof Error)) return false;
+  const msg = err.message.toLowerCase();
+  return (
+    msg.includes("fetch") ||
+    msg.includes("network") ||
+    msg.includes("failed to fetch") ||
+    msg.includes("networkerror") ||
+    msg.includes("load failed")
+  );
 }
 
 function flattenPaths(tree: TreeNode[]): Set<string> {
