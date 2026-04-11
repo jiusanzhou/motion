@@ -191,3 +191,85 @@ main {
   max-height: 240px;
   height: auto;
 }
+
+/* ---- Print styles: only show .motion-editor content ---- */
+@media print {
+  /* Hide everything by default */
+  body > * {
+    display: none !important;
+  }
+
+  /* Then show only the React root → walk up to find .motion-editor */
+  body {
+    background: white !important;
+    color: black !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Make sure the ancestor chain of .motion-editor is visible */
+  body > *:has(.motion-editor),
+  body > *:has(.motion-editor) * {
+    display: revert !important;
+  }
+
+  /* Hide header, sidebar, tabs, AI panel, and other chrome */
+  header,
+  nav,
+  aside,
+  [class*="Sidebar"],
+  [class*="sidebar"],
+  [class*="Header"],
+  [class*="TabBar"],
+  [class*="AIChatPanel"],
+  [class*="Frontmatter"],
+  [class*="Toast"],
+  [class*="CommandPalette"],
+  [class*="ConnectDialog"],
+  [class*="AISettings"],
+  .bn-side-menu,
+  .bn-drag-handle,
+  .bn-drag-handle-menu,
+  [data-drag-handle] {
+    display: none !important;
+  }
+
+  /* Show and style the editor */
+  .motion-editor {
+    display: block !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 1cm !important;
+  }
+
+  .motion-editor .bn-editor {
+    font-size: 12pt !important;
+    line-height: 1.6 !important;
+    color: black !important;
+  }
+
+  /* Clean up links for print */
+  .motion-editor a {
+    color: black !important;
+    text-decoration: underline !important;
+  }
+
+  /* Code blocks */
+  .motion-editor pre,
+  .motion-editor code {
+    font-size: 10pt !important;
+    border: 1px solid #ddd !important;
+    background: #f8f8f8 !important;
+  }
+
+  /* Avoid page breaks inside blocks */
+  .motion-editor .bn-block {
+    break-inside: avoid;
+  }
+
+  /* Images */
+  .motion-editor img {
+    max-width: 100% !important;
+    break-inside: avoid;
+  }
+}

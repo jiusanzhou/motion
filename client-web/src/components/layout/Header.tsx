@@ -19,6 +19,14 @@ import {
   Menu,
   Bot,
   Settings2,
+  Download,
+  FileText,
+  FileCode,
+  FileType,
+  Image,
+  Braces,
+  AlignLeft,
+  Printer,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
@@ -258,6 +266,112 @@ export function Header() {
                   align="end"
                   sideOffset={4}
                 >
+                  {/* Export submenu */}
+                  <DropdownMenu.Sub>
+                    <DropdownMenu.SubTrigger className={dropdownItemClass}>
+                      <Download className="h-4 w-4" />
+                      Export
+                    </DropdownMenu.SubTrigger>
+                    <DropdownMenu.Portal>
+                      <DropdownMenu.SubContent
+                        className={dropdownContentClass}
+                        sideOffset={4}
+                      >
+                        <DropdownMenu.Item
+                          className={dropdownItemClass}
+                          onSelect={async () => {
+                            if (!currentDoc) return;
+                            const { exportAsMarkdown } = await import("@/lib/export");
+                            exportAsMarkdown(currentDoc);
+                          }}
+                        >
+                          <FileText className="h-4 w-4" />
+                          Markdown (.md)
+                        </DropdownMenu.Item>
+                        <DropdownMenu.Item
+                          className={dropdownItemClass}
+                          onSelect={async () => {
+                            if (!currentDoc) return;
+                            const { exportAsHTML } = await import("@/lib/export");
+                            exportAsHTML(currentDoc);
+                          }}
+                        >
+                          <FileCode className="h-4 w-4" />
+                          HTML (.html)
+                        </DropdownMenu.Item>
+                        <DropdownMenu.Item
+                          className={dropdownItemClass}
+                          onSelect={async () => {
+                            if (!currentDoc) return;
+                            const { exportAsPDF } = await import("@/lib/export");
+                            exportAsPDF(currentDoc);
+                          }}
+                        >
+                          <FileText className="h-4 w-4" />
+                          PDF (Print to PDF)
+                        </DropdownMenu.Item>
+                        <DropdownMenu.Item
+                          className={dropdownItemClass}
+                          onSelect={async () => {
+                            if (!currentDoc) return;
+                            const { exportAsWord } = await import("@/lib/export");
+                            exportAsWord(currentDoc);
+                          }}
+                        >
+                          <FileType className="h-4 w-4" />
+                          Word (.docx)
+                        </DropdownMenu.Item>
+                        <DropdownMenu.Item
+                          className={dropdownItemClass}
+                          onSelect={async () => {
+                            if (!currentDoc) return;
+                            const { exportAsPNG } = await import("@/lib/export");
+                            exportAsPNG(currentDoc);
+                          }}
+                        >
+                          <Image className="h-4 w-4" />
+                          Image (.png)
+                        </DropdownMenu.Item>
+                        <DropdownMenu.Item
+                          className={dropdownItemClass}
+                          onSelect={async () => {
+                            if (!currentDoc) return;
+                            const { exportAsJSON } = await import("@/lib/export");
+                            exportAsJSON(currentDoc);
+                          }}
+                        >
+                          <Braces className="h-4 w-4" />
+                          JSON (.json)
+                        </DropdownMenu.Item>
+                        <DropdownMenu.Item
+                          className={dropdownItemClass}
+                          onSelect={async () => {
+                            if (!currentDoc) return;
+                            const { exportAsPlainText } = await import("@/lib/export");
+                            exportAsPlainText(currentDoc);
+                          }}
+                        >
+                          <AlignLeft className="h-4 w-4" />
+                          Plain Text (.txt)
+                        </DropdownMenu.Item>
+                      </DropdownMenu.SubContent>
+                    </DropdownMenu.Portal>
+                  </DropdownMenu.Sub>
+
+                  {/* Print */}
+                  <DropdownMenu.Item
+                    className={dropdownItemClass}
+                    onSelect={async () => {
+                      const { printDocument } = await import("@/lib/export");
+                      printDocument();
+                    }}
+                  >
+                    <Printer className="h-4 w-4" />
+                    Print
+                  </DropdownMenu.Item>
+
+                  <DropdownMenu.Separator className="my-1 h-px bg-[var(--neutral-200)]" />
+
                   <DropdownMenu.Item
                     className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm text-red-600 outline-none hover:bg-red-50 dark:hover:bg-red-950"
                     onSelect={() => {
