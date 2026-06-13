@@ -5,6 +5,11 @@
 
 import type { MotionDocument } from "@/types";
 import { serializeDocument } from "@/lib/markdown";
+import {
+  themeCSS,
+  themeBodyClass,
+  type ExportTheme,
+} from "@/lib/export-themes";
 
 /** Trigger a file download in the browser */
 function downloadBlob(blob: Blob, filename: string) {
@@ -36,8 +41,15 @@ export function exportAsMarkdown(doc: MotionDocument) {
 /**
  * Build a standalone HTML string from the .motion-editor container.
  * Inlines computed styles for a faithful offline snapshot.
+ *
+ * @param doc   the Motion document being exported
+ * @param theme visual theme to apply ("default" preserves the editor look,
+ *              "paper" applies the Kami-inspired warm parchment style)
  */
-function buildHTMLFromEditor(doc: MotionDocument): string {
+function buildHTMLFromEditor(
+  doc: MotionDocument,
+  theme: ExportTheme = "default"
+): string {
   const editorEl = document.querySelector(".motion-editor");
   if (!editorEl) throw new Error("Editor element not found");
 
@@ -51,35 +63,45 @@ function buildHTMLFromEditor(doc: MotionDocument): string {
     )
     .forEach((el) => el.remove());
 
-  // Collect all stylesheets
+  // Default theme keeps the editor's inlined stylesheets so the export
+  // looks like the editor. Paper theme intentionally drops them so its
+  // own constraint system is the sole visual authority.
   const styleSheets: string[] = [];
-  for (const sheet of Array.from(document.styleSheets)) {
-    try {
-      const rules = Array.from(sheet.cssRules || []);
-      styleSheets.push(rules.map((r) => r.cssText).join("\n"));
-    } catch {
-      // Cross-origin sheets — skip
+  if (theme === "default") {
+    for (const sheet of Array.from(document.styleSheets)) {
+      try {
+        const rules = Array.from(sheet.cssRules || []);
+        styleSheets.push(rules.map((r) => r.cssText).join("\n"));
+      } catch {
+        // Cross-origin sheets — skip
+      }
     }
   }
 
-  // Get computed CSS custom properties from :root
-  const rootStyles = getComputedStyle(document.documentElement);
-  const cssVars = [
-    "--background",
-    "--foreground",
-    "--neutral-50",
-    "--neutral-100",
-    "--neutral-200",
-    "--neutral-300",
-    "--neutral-400",
-    "--neutral-500",
-    "--neutral-600",
-    "--neutral-700",
-    "--neutral-800",
-    "--neutral-900",
-  ]
-    .map((v) => `${v}: ${rootStyles.getPropertyValue(v)}`)
-    .join(";\n    ");
+  // Get computed CSS custom properties from :root (default theme only)
+  let cssVars = "";
+  if (theme === "default") {
+    const rootStyles = getComputedStyle(document.documentElement);
+    cssVars = [
+      "--background",
+      "--foreground",
+      "--neutral-50",
+      "--neutral-100",
+      "--neutral-200",
+      "--neutral-300",
+      "--neutral-400",
+      "--neutral-500",
+      "--neutral-600",
+      "--neutral-700",
+      "--neutral-800",
+      "--neutral-900",
+    ]
+      .map((v) => `${v}: ${rootStyles.getPropertyValue(v)}`)
+      .join(";\n    ");
+  }
+
+  const bodyClass = themeBodyClass(theme);
+  const themeStyles = themeCSS(theme);
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -92,24 +114,10 @@ function buildHTMLFromEditor(doc: MotionDocument): string {
       ${cssVars};
     }
     ${styleSheets.join("\n")}
-    body {
-      max-width: 900px;
-      margin: 2rem auto;
-      padding: 0 1.5rem;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      background: var(--background, #fff);
-      color: var(--foreground, #1f1f1f);
-      line-height: 1.7;
-    }
-    h1 { font-size: 1.875rem; font-weight: 700; margin-top: 2rem; }
-    h2 { font-size: 1.5rem; font-weight: 600; margin-top: 1.5rem; }
-    h3 { font-size: 1.25rem; font-weight: 600; margin-top: 1.25rem; }
-    img { max-width: 100%; height: auto; }
-    pre { overflow-x: auto; padding: 1rem; background: #f5f5f5; border-radius: 6px; }
-    code { font-size: 0.9em; }
+    ${themeStyles}
   </style>
 </head>
-<body>
+<body class="${bodyClass}">
   <h1>${escapeHtml(doc.title)}</h1>
   ${clone.innerHTML}
 </body>
@@ -124,10 +132,14 @@ function escapeHtml(s: string): string {
     .replace(/"/g, "&quot;");
 }
 
-export function exportAsHTML(doc: MotionDocument) {
-  const html = buildHTMLFromEditor(doc);
+export function exportAsHTML(
+  doc: MotionDocument,
+  theme: ExportTheme = "default"
+) {
+  const html = buildHTMLFromEditor(doc, theme);
   const blob = new Blob([html], { type: "text/html;charset=utf-8" });
-  downloadBlob(blob, `${safeFilename(doc.title)}.html`);
+  const suffix = theme === "default" ? "" : `.${theme}`;
+  downloadBlob(blob, `${safeFilename(doc.title)}${suffix}.html`);
 }
 
 // ---- PDF Export (via browser print) ----
@@ -135,13 +147,20 @@ export function exportAsHTML(doc: MotionDocument) {
 /**
  * Opens a print dialog for the .motion-editor content.
  * The user can choose "Save as PDF" from the browser print dialog.
+ *
+ * @param theme visual theme for the printed output
  */
-export function exportAsPDF(doc: MotionDocument) {
-  const html = buildHTMLFromEditor(doc);
+export function exportAsPDF(
+  doc: MotionDocument,
+  theme: ExportTheme = "default"
+) {
+  const html = buildHTMLFromEditor(doc, theme);
 
   const printWindow = window.open("", "_blank");
   if (!printWindow) {
-    // Fallback: just trigger window.print() which uses our @media print CSS
+    // Fallback: just trigger window.print() which uses our @media print CSS.
+    // Note: this fallback ignores the requested theme — without a fresh
+    // window we can only print the live editor styles.
     window.print();
     return;
   }

@@ -338,6 +338,30 @@ export function Header() {
                           <FileText className="h-4 w-4" />
                           PDF (Print to PDF)
                         </DropdownMenu.Item>
+                        <DropdownMenu.Separator className="my-1 h-px bg-neutral-200 dark:bg-neutral-700" />
+                        <DropdownMenu.Item
+                          className={dropdownItemClass}
+                          onSelect={async () => {
+                            if (!currentDoc) return;
+                            const { exportAsHTML } = await import("@/lib/export");
+                            exportAsHTML(currentDoc, "paper");
+                          }}
+                        >
+                          <FileCode className="h-4 w-4" />
+                          HTML — Paper style
+                        </DropdownMenu.Item>
+                        <DropdownMenu.Item
+                          className={dropdownItemClass}
+                          onSelect={async () => {
+                            if (!currentDoc) return;
+                            const { exportAsPDF } = await import("@/lib/export");
+                            exportAsPDF(currentDoc, "paper");
+                          }}
+                        >
+                          <FileText className="h-4 w-4" />
+                          PDF — Paper style
+                        </DropdownMenu.Item>
+                        <DropdownMenu.Separator className="my-1 h-px bg-neutral-200 dark:bg-neutral-700" />
                         <DropdownMenu.Item
                           className={dropdownItemClass}
                           onSelect={async () => {
