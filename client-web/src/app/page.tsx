@@ -28,20 +28,11 @@ export const metadata: Metadata = {
     url,
     siteName: "Motion",
     type: "website",
-    images: [
-      {
-        url: "/logo-512.png",
-        width: 512,
-        height: 512,
-        alt: "Motion — Agent-Friendly Knowledge Base",
-      },
-    ],
   },
   twitter: {
     card: "summary_large_image",
     title,
     description,
-    images: ["/logo-512.png"],
   },
 };
 

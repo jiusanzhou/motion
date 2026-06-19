@@ -29,19 +29,10 @@ export const metadata: Metadata = {
     type: "website",
     siteName: "Motion",
     locale: "en_US",
-    images: [
-      {
-        url: "/logo-512.png",
-        width: 512,
-        height: 512,
-        alt: "Motion — Agent-Friendly Knowledge Base",
-      },
-    ],
   },
   twitter: {
     card: "summary_large_image",
     creator: "@jiusanzhou",
-    images: ["/logo-512.png"],
   },
   robots: {
     index: true,
