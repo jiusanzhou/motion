@@ -1,69 +1,57 @@
-"use client";
+import type { Metadata } from "next";
+import { LandingView } from "@/components/landing/LandingView";
+import { EditorBoot } from "@/components/landing/EditorBoot";
 
-import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
-import dynamic from "next/dynamic";
-import { AppShell } from "@/components/layout/AppShell";
-import { trackEvent } from "@/lib/analytics";
+const title = "Motion — Agent-Friendly Knowledge Base, Backed by GitHub";
+const description =
+  "Motion is a pure-frontend knowledge editor where AI agents and humans collaborate. Your notes live in a GitHub repo you own — Markdown-native, MIT-licensed, no server, no vendor lock-in.";
+const url = "https://motion.wencai.app";
 
-const Editor = dynamic(() => import("@/components/editor/Editor").then((m) => m.Editor), {
-  ssr: false,
-  loading: () => (
-    <div className="flex h-full items-center justify-center">
-      <div className="text-sm text-neutral-400">Loading editor...</div>
-    </div>
-  ),
-});
+export const metadata: Metadata = {
+  title,
+  description,
+  keywords: [
+    "agent friendly knowledge base",
+    "github knowledge base",
+    "notion alternative",
+    "obsidian alternative",
+    "markdown editor",
+    "MCP server",
+    "open source wiki",
+  ],
+  alternates: {
+    canonical: url,
+  },
+  openGraph: {
+    title,
+    description,
+    url,
+    siteName: "Motion",
+    type: "website",
+    images: [
+      {
+        url: "/logo-512.png",
+        width: 512,
+        height: 512,
+        alt: "Motion — Agent-Friendly Knowledge Base",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title,
+    description,
+    images: ["/logo-512.png"],
+  },
+};
 
 export default function Home() {
-  const router = useRouter();
-  const { status } = useSession();
-  const [checked, setChecked] = useState(false);
-  const loginTrackedRef = useRef(false);
-
-  // Track GitHub login success once per browser session
-  useEffect(() => {
-    if (status === "authenticated" && !loginTrackedRef.current) {
-      loginTrackedRef.current = true;
-      const key = "motion:login-tracked";
-      if (!sessionStorage.getItem(key)) {
-        trackEvent("github_login_success");
-        sessionStorage.setItem(key, "1");
-      }
-    }
-  }, [status]);
-
-  useEffect(() => {
-    // If user has repo config in localStorage, they've used the app before — let them in
-    const hasRepoConfig = !!localStorage.getItem("motion:repo-config");
-
-    if (status === "loading") {
-      // While loading, if they have local config, show the app immediately
-      if (hasRepoConfig) {
-        setChecked(true);
-      }
-      return;
-    }
-
-    if (status === "unauthenticated" && !hasRepoConfig) {
-      router.replace("/welcome");
-    } else {
-      setChecked(true);
-    }
-  }, [status, router]);
-
-  if (!checked) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-[var(--background)]">
-        <div className="text-sm text-[var(--neutral-400)]">Loading...</div>
-      </div>
-    );
-  }
-
   return (
-    <AppShell>
-      <Editor />
-    </AppShell>
+    <>
+      {/* Server-rendered landing page — always present in the HTML for SEO. */}
+      <LandingView />
+      {/* Client-side gate that overlays the editor for authenticated/returning users. */}
+      <EditorBoot />
+    </>
   );
 }

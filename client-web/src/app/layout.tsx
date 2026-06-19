@@ -5,8 +5,16 @@ import { ServiceWorkerRegister } from "@/components/pwa/ServiceWorkerRegister";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Motion — Knowledge Editor",
-  description: "Agent-friendly knowledge base editor powered by GitHub",
+  metadataBase: new URL("https://motion.wencai.app"),
+  title: {
+    default: "Motion — Agent-Friendly Knowledge Base, Backed by GitHub",
+    template: "%s | Motion",
+  },
+  description:
+    "Agent-friendly, pure-frontend knowledge editor. Your notes live in a GitHub repo you own — Markdown-native, MIT-licensed, no server, no vendor lock-in.",
+  applicationName: "Motion",
+  authors: [{ name: "Zoe", url: "https://zoe.im" }],
+  creator: "Zoe",
   manifest: "/manifest.json",
   icons: {
     icon: "/icon.svg",
@@ -16,6 +24,34 @@ export const metadata: Metadata = {
     capable: true,
     statusBarStyle: "default",
     title: "Motion",
+  },
+  openGraph: {
+    type: "website",
+    siteName: "Motion",
+    locale: "en_US",
+    images: [
+      {
+        url: "/logo-512.png",
+        width: 512,
+        height: 512,
+        alt: "Motion — Agent-Friendly Knowledge Base",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    creator: "@jiusanzhou",
+    images: ["/logo-512.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
   },
 };
 

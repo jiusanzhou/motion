@@ -411,11 +411,20 @@ export async function generateMetadata({
       url: canonicalUrl,
       siteName: "Motion",
       type: "website",
+      images: [
+        {
+          url: "/logo-512.png",
+          width: 512,
+          height: 512,
+          alt: "Motion — Agent-Friendly Knowledge Base",
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
       title: data.seoTitle,
       description: data.metaDescription,
+      images: ["/logo-512.png"],
     },
   };
 }
