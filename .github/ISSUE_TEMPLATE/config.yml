@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 Discussions
+    url: https://github.com/jiusanzhou/motion/discussions
+    about: Questions, ideas, deployment stories, and Show and Tell.
+  - name: 🌐 Live Demo
+    url: https://motion.wencai.app
+    about: Try Motion in your browser before filing an issue.
+  - name: 🔒 Security disclosure
+    url: mailto:security@zoe.im
+    about: Report a security vulnerability privately.

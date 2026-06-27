@@ -49,14 +49,22 @@ Unlike cloud-based tools, Motion gives you:
 
 ## Why Motion?
 
-| | Motion | Notion | Obsidian |
-|--|--------|--------|----------|
-| Data ownership | ✅ GitHub repo | ❌ Cloud | ✅ Local files |
-| AI agent access | ✅ MCP WebSocket | ❌ | ❌ |
-| Zero backend | ✅ | ❌ | ✅ |
-| Collaborative | ✅ via Git | ✅ | ❌ |
-| Self-hosted | ✅ | ❌ | N/A |
-| Free | ✅ | Freemium | Freemium |
+The Notion-style editor landscape is crowded. Here's where Motion fits:
+
+| | **Motion** | Notion | Obsidian | Logseq | AppFlowy |
+|---|---|---|---|---|---|
+| **Where data lives** | 🟢 Your GitHub repo | ☁️ Notion's cloud | 💾 Local files | 💾 Local files | ☁️ AppFlowy cloud or self-hosted |
+| **AI agent access** | 🟢 **MCP WebSocket — built in** | ❌ | ⚠️ Plugins | ⚠️ Plugins | ❌ |
+| **Backend required** | 🟢 **None** | ✅ Vendor | None | None | ✅ Your own server |
+| **Version history** | 🟢 Every Git commit | ⚠️ Cloud-managed | ⚠️ Sync providers | ⚠️ Sync providers | ✅ |
+| **Collaborative** | 🟢 via Git (PRs as suggestions) | ✅ Real-time | ⚠️ Sync addons | ⚠️ Sync addons | ✅ |
+| **Self-hosted** | 🟢 One-click Vercel or static | ❌ | n/a (local) | n/a (local) | ✅ |
+| **Privacy** | 🟢 OAuth token stays in browser | ⚠️ Notion sees everything | 🟢 | 🟢 | depends |
+| **Sharing a page** | ⚠️ Public via GitHub Pages | 🟢 1-click public link | ⚠️ Publish add-on | ⚠️ Logseq Publish | 🟢 |
+| **Mobile** | 🟢 PWA | 🟢 Native | 🟢 Native | 🟢 Native | 🟢 Native |
+| **Free for personal** | 🟢 | Freemium | 🟢 | 🟢 | 🟢 |
+
+> **TL;DR:** Motion's bet is *"your knowledge base should be a Git repo, AI agents should be first-class, and there should be no backend to operate."* If you already live in GitHub + want a Notion-class editor that an AI can read/write through MCP — Motion is built for you. If you want real-time multiplayer editing with rich permissions, Notion is still the answer.
 
 ## Features
 
@@ -198,10 +206,31 @@ Your GitHub repo **is** your database — standard markdown files with YAML fron
 
 See [ROADMAP.md](ROADMAP.md) for the full development plan and progress.
 
+## Community
+
+- 🌐 **Try it now** → [motion.wencai.app](https://motion.wencai.app)
+- 💬 **Questions / ideas / show your knowledge base** → [GitHub Discussions](https://github.com/jiusanzhou/motion/discussions)
+- 🐛 **Bug / feature** → [Issues](https://github.com/jiusanzhou/motion/issues)
+- 🤝 **First-time contributor** → look for [`good first issue`](https://github.com/jiusanzhou/motion/labels/good%20first%20issue), then read [CONTRIBUTING.md](./CONTRIBUTING.md)
+- 🔒 **Security disclosure** → `security@zoe.im` (please, not public issues)
+- ⭐ **Star the repo** if Motion's approach to data ownership resonates with you — it's the cheapest way to help others discover it
+
+## Deploy Your Own
+
+Motion has zero backend, so deployment is a static site + optional MCP relay worker:
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fjiusanzhou%2Fmotion&project-name=motion&repository-name=motion&root-directory=client-web)
+
+Want the MCP server too? See [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) for Cloudflare Workers, self-hosted Node, or Docker setup.
+
 ## Contributing
 
-Contributions are welcome! Please open an issue first to discuss what you'd like to change.
+Contributions are welcome — see [CONTRIBUTING.md](./CONTRIBUTING.md) for the dev setup, architecture pointers, and code style. We aim to respond to every issue within 24 hours.
+
+If you build something neat with Motion (a custom block, a new storage backend, a clever MCP integration), please share it in [Show and Tell](https://github.com/jiusanzhou/motion/discussions/categories/show-and-tell).
 
 ## License
 
-[MIT](LICENSE)
+[MIT](./LICENSE) © Zoe and Motion contributors.
+
+You can use Motion in commercial products, fork it, modify it, and ship it — no permission needed. If you build something cool with it, we'd love to see it in [Discussions](https://github.com/jiusanzhou/motion/discussions).
