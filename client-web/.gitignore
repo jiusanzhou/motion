@@ -41,3 +41,10 @@ yarn-error.log*
 next-env.d.ts
 .env.local
 bun.lock
+
+# Cloudflare migration
+.env.cf-production
+.env.production
+.dev.vars
+.open-next/
+.wrangler/

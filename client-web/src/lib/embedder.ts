@@ -35,7 +35,14 @@ export async function getEmbedder(): Promise<FeatureExtractionPipeline> {
   if (typeof window === "undefined") throw new Error("embedder: browser only");
   if (!pipelinePromise) {
     pipelinePromise = (async () => {
-      const { pipeline, env } = await import("@huggingface/transformers");
+      // Loaded from CDN at runtime (browser only) so the package does not need to be
+      // a dependency of this app. Keeps onnxruntime-node/sharp out of the
+      // server bundle, which cannot carry native .node binaries on Workers.
+      const TRANSFORMERS_CDN =
+        "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1";
+      const { pipeline, env } = (await import(
+        /* webpackIgnore: true */ /* turbopackIgnore: true */ TRANSFORMERS_CDN
+      )) as typeof import("@huggingface/transformers");
       // Allow WASM backend from CDN
       env.allowLocalModels = false;
       notifyProgress(0);

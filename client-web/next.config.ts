@@ -1,7 +1,10 @@
 import type { NextConfig } from "next";
+import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  serverExternalPackages: ["sharp", "onnxruntime-node"],
 };
+
+initOpenNextCloudflareForDev();
 
 export default nextConfig;
